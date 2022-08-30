@@ -36,7 +36,7 @@ NOTES:
 
 ```{r Setting Working Directories}
   # Identifying our main directory
-  WorkDir <- "C:/Users/wjpmi/Dropbox/My PC (UncleSplashysSaddnessEmporium)/Desktop/Grad School/Projects/Complete/Fright Night/Public_Records/"
+  WorkDir <- "C:/Users/tui81100/Documents/GitHub/fright_night_study/"
 
   # Identifying specific directories to read and write from
   Export <- paste0(WorkDir, "data/Study_02/Derivative/")
@@ -48,7 +48,12 @@ NOTES:
 # Loading in the data
 
 ```{r Pulling in Dataframe}
-  source(paste0(WorkDir,"scripts/3_Study2_DFcreation/Regulation_df.R"))
+  setwd(Import)
+  df <- read.csv(file = "df.csv", 
+                 header = T, 
+                 sep=",", 
+                 stringsAsFactors = F,
+                 na.strings=c("","N/A"))
   df_all <- df
   df <- df %>%
         subset(!is.na(df$EmoMod) &
@@ -76,8 +81,8 @@ This has once again only left us with a fraction of the original dataset (12.3% 
 ```{r Printing Details}
 paste("Number of Participants:", length(unique(df$PID)))
 paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
-paste("Number of  Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
-paste("Number of  Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
 paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
 paste("Number of Distracted cases:", length(which(df$Distracted == 1)))
 paste("Number of Reappraised cases:", length(which(df$Distracted == 0)))

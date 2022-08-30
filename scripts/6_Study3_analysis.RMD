@@ -38,11 +38,11 @@ Indicating how I want numbers presented and formatted
 Specifying my working directories
 ```{r Setting Working Directories}
   # Identifying our main directory
-  WorkDir <- "C:/Users/wjpmi/Dropbox/My PC (UncleSplashysSaddnessEmporium)/Desktop/Grad School/Projects/Complete/Fright Night/Public_Records/"
+  WorkDir <- "C:/Users/tui81100/Documents/GitHub/fright_night_study/"
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "data/Study_03/Derivative/")
-  Import <- paste0(WorkDir, "data/Study_03/Raw/")
+  Export <- paste0(WorkDir, "data/Study_03/Raw/")
+  Import <- paste0(WorkDir, "data/Study_03/Source/")
   Plots <- paste0(WorkDir, "plots/")
 ```
 

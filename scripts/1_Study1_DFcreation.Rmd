@@ -42,11 +42,11 @@ output: html_document
 
 ``` {r Setting Working Directory}
   # Identifying our main directory
-  WorkDir <- "C:/Users/wjpmi/Dropbox/My PC (UncleSplashysSaddnessEmporium)/Desktop/Grad School/Projects/Complete/Fright Night/"
+  WorkDir <- "C:/Users/tui81100/Documents/GitHub/fright_night_study/"
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "Public_Records/data/Study_01/Raw/")
-  Import <- paste0(WorkDir, "Public_Records/data/Study_01/Source/")
+  Export <- paste0(WorkDir, "data/Study_01/Raw/")
+  Import <- paste0(WorkDir, "data/Study_01/Source/")
 ```
 
 # ----- LOADING DATA -----
