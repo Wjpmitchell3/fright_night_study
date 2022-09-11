@@ -1,6 +1,6 @@
 ---
 title: "ER Choice v. Usage - Study 3 Dataframe Creation"
-author: "William J. Mitchell"
+author: "BLINDED"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -9,7 +9,14 @@ output: html_document
 
 Specifying our package usage
 ```{r Packages I Use}
-   pacman::p_load(tidyverse)
+ # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
+  # Loading in my packages with my pacman manager
+   pacman::p_load(here,
+                  tidyverse)
 ```
 
 Indicating how I want numbers presented and formatted
@@ -18,21 +25,22 @@ Indicating how I want numbers presented and formatted
   options(digits=3)
   options(tinytex.verbose = TRUE)
 ```
-  
+
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
 ```{r Setting Working Directories}
   # Identifying our main directory
-  WorkDir <- "C:/Users/tui81100/Documents/GitHub/fright_night_study/"
+  WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "data/Study_03/Raw/")
-  Import <- paste0(WorkDir, "data/Study_03/Source/")
+  Export <- paste0(WorkDir, "/data/Study_03/Raw/")
+  Import <- paste0(WorkDir, "/data/Study_03/Source/")
 ```
 
 #  DATAFRAME CREATION 
   
 ```{r Loading dataframe}
-  setwd(Import)
-  df.temp <- read.csv(file = "df.csv", 
+  df.temp <- read.csv(file = paste0(Import, "df.csv"), 
                  header = T, sep=",", 
                  stringsAsFactors = F,
                  na.strings=c("","N/A"))
@@ -198,8 +206,7 @@ df.temp <-pivot_longer(data=df.temp,
 ```
 
 ```{r Loading dataframe}
-  setwd(WorkDir)
-  df.og <- read.csv(file = "data/Study_01/Derivative/df_subset.csv", 
+  df.og <- read.csv(file = paste0(WorkDir,"/data/Study_01/Derivative/df_subset.csv"), 
                  header = T, sep=",",
                  row.names = 1,
                  stringsAsFactors = F,
@@ -207,8 +214,7 @@ df.temp <-pivot_longer(data=df.temp,
 ```
 
 ```{r Loading dataframe}
-  setwd(WorkDir)
-  df.og.el <- read.csv(file = "data/Study_01/Derivative/df_subset_eventlevel.csv", 
+  df.og.el <- read.csv(file = paste0(WorkDir, "/data/Study_01/Derivative/df_subset_eventlevel.csv"), 
                  header = T, sep=",",
                  row.names = 1,
                  stringsAsFactors = F,

@@ -1,6 +1,6 @@
 ---
 title: "ER Choice v. Usage - Study_1"
-author: "Mitchell, W.J."
+author: "BLINDED"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -16,11 +16,23 @@ ISSUES:
 NOTES:
 
 # Setup
+
+NOTE: I really love the `p_load()` function from `pacman`. If a required package isn't installed, it'll install it. If it's not loaded it'll load it. If it's not updated, it'll update it. You just enter what you need and it manages the rest. 
+
 ```{r Packages I Use}
+  # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
   # Loading in my packages with my pacman manager
-  pacman::p_load(effects,  
+  pacman::p_load(effects,
+                 here,
+                 influence.ME,
+                 lattice,
                  lme4, 
-                 performance, 
+                 performance,
+                 sjPlot,
                  stargazer, 
                  tidyverse)
 ```
@@ -32,15 +44,17 @@ NOTES:
   options(tinytex.verbose = TRUE)
 ```
 
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
 ```{r Setting Working Directories}
   # Identifying our main directory
   # Identifying our main directory
-  WorkDir <- "C:/Users/tui81100/Documents/GitHub/fright_night_study/"
+  WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "data/Study_01/Raw/")
-  Import <- paste0(WorkDir, "data/Study_01/Source/")
-  Plots <- paste0(WorkDir, "plots/")
+  Export <- paste0(WorkDir, "/data/Study_01/Deriv/")
+  Import <- paste0(WorkDir, "/data/Study_01/Raw/")
+  Plots <- paste0(WorkDir, "/plots/")
 ```
 
 ## Building the Dataframe
@@ -48,8 +62,7 @@ NOTES:
 We're going to start by loading in our cleaned dataframe
 ```{r Loading dataframe}
   # Loading in our cleaned dataset
-  setwd(Import)
-  df <- read.csv(file = "df.csv", 
+  df <- read.csv(file = paste0(Import, "df.csv"), 
                  header = T, sep=",", 
                  stringsAsFactors = F,
                  na.strings=c("","N/A"), 
@@ -79,7 +92,7 @@ An executive decision prior to collection was that we'd collect fear intensity r
 
 ### Cronbach's Alpha
 Before we do anything, I want to assess the internal consistency of the emotions we are deeming to be negatively valenced. Given that we used a rather heavily modified measure, we need to complete some sort of a quality assurance measure. Face validity isn't quite enough.
-```{r Building an Empty Dataframe to Calculate Chronbach's Alpha}
+```{r Building an Empty Dataframe to Calculate Chronbachs Alpha}
   # Generating an empty dataframe in a format conducive to completing the cronbach's alpha
   alpha <- data.frame(PID = sort(rep(unique(df$PID), 10)), 
                       Event = rep(1:10,47), 
@@ -98,8 +111,9 @@ Before we do anything, I want to assess the internal consistency of the emotions
                       Fear = NA)
 ```                      
                       
-```{r Building the dataframe by which to calculate Chronbach's Alpha}
+```{r Building the dataframe by which to calculate Chronbachs Alpha}
 # Populating that dataframe with data from the original dataframe
+ 
 for (row in 1:nrow(df)){
   if (row %% 14 != 0) {
     if (!is.na(df$Presence[row])) {
@@ -111,9 +125,10 @@ for (row in 1:nrow(df)){
 }
 ```
 
-```{r Calculating Chronbach's Alpha}
+NOTE: We did not have enough endorsements of feeling anger/aggression to include in the calculation. The alpha function also provides a warning regarding the matrix not being positive definite. This message is produced when feeding `alpha()` a dataframe with missing values [see this stackoverflow post for more details](https://stackoverflow.com/questions/36867565/interpreting-the-psychcor-smoother-function). This is unfortunately as best as I can tell just the nature of our data. Not everyone felt all of the emotions all of the time so there will necessarily be missing data. I tried searching pretty extensively more a more appropriate test, but I couldn't find one. 
+
+```{r Calculating Chronbachs Alpha}
 # Calculating Cronbach's Alpha for the negative emotions 
-# NOTE: We did not have enough endorsements of feeling anger/aggression to include in the calculation
 psych::alpha(alpha[,7:15], 
              na.rm = T, 
              use = "pairwise")
@@ -149,7 +164,7 @@ for (row in 1:nrow(df)){
 rm(row, col)
 ```
 
-We are centering the intercept of the events on an extrapolated middle event (5.5). I struggled with whether to center it in the middle or on the first event. My logic is that we likely will see effects of time and I'm more interested in the average, which event 5.5 better represents and which might better represent the data as a whole, than the first event. 
+We are centering the intercept of the events on an extrapolated middle event (5.5). I should explain this because it confused the folks reviewing this script. Although colloquially, half of 10 is 5, that's only the case when we're operating on a number scale that's on Base 0. We had no Event 0; only Event 1. If we want to capture the average event, or in other words, the mean, we need event 5.5. We can pretty simply demonstate that 5.5 is the mean by running `mean(1:10)`. We could also just count on a number line. Event 5 is slightly closer to Event 1 (4 - 3 - 2 - 1) than it is Event 10 (6 - 7 - 8 - 9 - 10). This is a contentious choice because Event 5.5 doesn't really exist; we are extrapolating a datapoint. The contention isn't whether to center on 5 or 5.5: 5 is essentially just a random datapoint if it isn't at true center. We might as well center on 6 or 9 for that matter. Though, I did struggle with whether to center it in the middle or on the first event. My logic is that we likely will see effects of time and I'm more interested in the average, which event 5.5 better represents and which might better represent the data as a whole, than the first event. 
 
 ```{r Making the intercept of event the first event}
   df$Event_recallorder <- as.numeric(df$Event - 4.5)
@@ -161,8 +176,8 @@ Reordering and subsetting the variables that we care about.
 ```{r Subsetting Relevant Data}
   df <- subset(df,
                !is.na(df$Emo.Extent),
-               select = names(df)[c(1:2, 203:204, 6:11, 14, 16, 35:36, 39, 47,
-                                    137:144, 163:167, 169:173, 188:197)])
+               select = names(df)[c(1:2, 202:203, 6:11, 14, 16, 34:35, 38, 46,
+                                    136:143, 162:166, 168:172, 187:196)])
 ```
 
 Emotions and their regulation can be an extremely personal and idiosyncratic experience. As such, we expect that Person A's regulation might look different than Person B's and using person-centered multilevel models might better capture that. 
@@ -204,9 +219,24 @@ Assessing whether the variables we want to use are structured correctly
 Coercing the data that is misstructured to the correct structure
 
 ```{r Restructuing Variables}
+# Coercing the easy variables
   df$Emotion <- as.factor(df$Emotion)
   df$Valence <- as.factor(df$Valence)
   df$PID <- as.factor(df$PID)
+  
+# Now coercing the haunted house variables is hard because for some stupid reason, these were free response, so there's a lot of variance
+# When people give a range, we're going to take the average of that range. When left blank, it populated a period, so we'll replace those 
+# with NA. When not enough information is present, we will also use NA. Also, excel automatically converted "#-#" entries to months, so we'll
+# fix those as well (e.g., 3-5 becomes "5-March")
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "."] <- NA
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "3-Feb"] <- 2.5
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "4-5 times"] <- 4.5
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "5-Mar"] <- 4
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "2 or 3 (ten + years ago)"] <- 2.5
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "Once every couple of years"] <- NA
+  df$HauntedHouse_Compare[df$HauntedHouse_Compare == "."] <- NA
+  
+# Now we'll coerce the other ones. 
   df$HauntedHouse_Times <- as.numeric(df$HauntedHouse_Times)
   df$HauntedHouse_Compare <- as.numeric(df$HauntedHouse_Compare)
 ```
@@ -250,7 +280,7 @@ cols_new <- c("Event", "Event_chronolorder", "Strategy.OG", "Emotion", "Emo.Exte
 # Subsettting those columns
 df_temp <- subset(df, select = cols_old)
 
-# Converting the names of reappraisal and disctration to more descriptive labels
+# Converting the names of reappraisal and distraction to more descriptive labels
 df_temp$Attention.Deployment[df_temp$Attention.Deployment == 1] <- "Distraction"
 df_temp$Attention.Deployment[df_temp$Attention.Deployment == 0] <- "Reappraisal"
 
@@ -275,13 +305,15 @@ sd(table(as.character(df$Emotion)))
 The mean number of times a negative emotion was reported was 16.6 instances with a standard deviation of 11.3. 
 
 ```{r One-Sample T Tests for Negative Valence}
-  t.test(df$Emo.Extent, mu = 5, alternative = "two.sided")
+  t.test(df$Emo.Extent, mu = 1, alternative = "two.sided")
   sd(df$Emo.Extent)
 ```
 
 Our haunted house stimuli elicited sufficient affective intensity (x = 5.55, 95% CI = (5.37, 5.73), sd = 1.18, t(165) = 50, p < 0.001). N.B.: mu was equated to a value of 1 in both t-tests, as 1 was the lowest value on the affective intensity scale and referred to "None at all".
 
-```{r Assessing the distributions of emotions}
+Note that an error message appears because while positive emotions and "other" have been removed from this dataset, such that there are 0 instances, R still recognizes them as categories within Emotion that could potentially be plotted. I could probably get rid of this error by resetting Emotion as a factor, but the error is essentially cosmetic so I'm worried. 
+
+```{r Assessing the distributions of emotions, warning=FALSE}
 plot <- ggplot(data = df, aes(x = Emotion, y = Emo.Extent)) + 
        theme_classic()+
        geom_jitter(aes(alpha=0.5, color=Emotion),shape=16, position=position_jitter(0.2)) + 
@@ -291,7 +323,6 @@ plot <- ggplot(data = df, aes(x = Emotion, y = Emo.Extent)) +
                      x = NULL, 
                      y ="Emotion Intensity") +
        scale_y_continuous(breaks = c(2:7)) +
-       scale_color_nord(palette = "afternoon_prarie", discrete = T) +
        coord_cartesian(ylim=c(1.5,7.5)) +
        theme(legend.position="none") +
        geom_boxplot(width=0.2, color="black", alpha=0.0) +
@@ -302,16 +333,6 @@ plot <- ggplot(data = df, aes(x = Emotion, y = Emo.Extent)) +
        theme(axis.text.x = element_text(size = 10, color = "Black", angle=-45, vjust = 1, hjust = 0.0)) +
        theme(axis.text.y = element_text(size = 12, color = "Black")) 
 plot
-```
-
-```{r Exporting Emotion Means}
-  setwd(Plots)
-  pdf("FN01_EmoExtent_mean.pdf",
-      width = 4, 
-      height = 3)
-  plot
-  dev.off()
-  rm(plot)
 ```
 
 ```{r Assessing the distributions of negative affect}
@@ -337,7 +358,7 @@ summary(m1)
 confint(m1, oldNames = FALSE)
 ```
 
-When we examine whether there's a relationship between affective intensity and the extent to which it's regulated with a bivariate linear regression, we find that affective intensity does have predictive towards regulation extent [t(164) = 4.39, p < 0.001, B = 0.351, 95% CI(0.193, 0.509), adj.r < 0.100], such that as affective intensity increases, regulatory extent increases as well. 
+When we examine whether there's a relationship between affective intensity and the extent to which it's regulated with a bivariate linear regression, we find that affective intensity does have predictive value towards regulation extent [t(164) = 4.39, p < 0.001, B = 0.351, 95% CI(0.193, 0.509), adj.r < 0.100], such that as affective intensity increases, regulatory extent increases as well. 
 
 ```{r Regression Model Plots}
 ggplot(data = df, aes(x = Emo.Extent.z, y = Reg.Extent.z, color = Emo.Extent.z)) +
@@ -377,15 +398,17 @@ anova(m0, m1)
 anova(m1, m2)
 ```
 
+NOTE: A very common warning message outputted by stargazer is "Warning: length of NULL cannot be changed." I haven't found a solution for it and neither has anyone in this [stackoverflow post](https://stackoverflow.com/questions/62375365/stargazer-error-length-of-null-cannot-be-changed-when-running-rchunk-in-rmarkd), but it's benign. 
+
 ```{r Model Outputs}  
 class(m0) <- "lmerMod"
 class(m1) <- "lmerMod"
 class(m2) <- "lmerMod"
 stargazer(m0,m1,m2,
-          type = "text", 
-          title= "Affect Predicting Regulation", 
+          type = "text",
+          title= "Affect Predicting Regulation",
           column.labels = c("Null Model", "Model 1", "Model 2"),
-          dep.var.labels = "Regulation Extent (z)", 
+          dep.var.labels = "Regulation Extent (z)",
           star.cutoffs = c(0.05, 0.01,0.001),
           covariate.labels = c("Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Age", "Gender",
                                "Depression", "IUS, Factor 2", "STAI, State", "STAI, Trait", "Intercept"),
@@ -430,30 +453,26 @@ plot <- ggplot(data = df, aes(x = Emo.Extent.pc.z, y = fit)) +
                             method = "lm", 
                             alpha = .00, 
                             size = .5) +
-                stat_smooth(method="lm", se = T, alpha = .6, size = 1.5, color = "Black") +
-                scale_x_continuous(breaks = c(-3,-2,-1,0,1,2,3)) +
-                scale_y_continuous(breaks = c(-2,-1,0,1,2)) +
-                labs(title = "Emotion Intensity Predicts Regulation Effort",
-                     subtitle = "B = 0.312 ***",
-                     x = "Emotion Intensity (Person-Centered, z)", 
+                stat_smooth(method="lm", se = T, alpha = .6, size = 4.5, color = "Black") +
+                scale_x_continuous(breaks = seq(-3,3,1)) +
+                scale_y_continuous(breaks = seq(-2,2,1)) +
+                labs(x = "Emotion Intensity (Person-Centered, z)", 
                      y ="Regulation Effort (z)") +
                 coord_cartesian(xlim=c(-2.5, 1.5), ylim=c(-2, 2)) +    
                 theme_classic() +
                 theme(legend.position = "none") +
-                theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-                theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
-                theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
-                theme(axis.title = element_text(size = 10)) +
-                theme(axis.text.x = element_text(size = 10, color = "Black")) +
-                theme(axis.text.y = element_text(size = 10, color = "Black")) 
+                theme(axis.title = element_text(size = 32)) +
+                theme(axis.text.x = element_text(size = 36, color = "Black")) +
+                theme(axis.text.y = element_text(size = 36, color = "Black")) 
 plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  setwd(Plots)
-  pdf("FN01_EmoExtent_RegExtent.pdf",
-      width = 4, 
-      height = 3)
+  tiff(paste0(Plots, "Fig2.tiff"),       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
   plot
   dev.off()
   rm(plot)
@@ -557,32 +576,31 @@ m1.e <- effect("Emo.Extent.z",m1,xlevels=list(Emo.Extent.z=seq(range(df$Emo.Exte
 m1.e <-as.data.frame(m1.e)
 head(m1.e)
 plot <- ggplot(m1.e, aes(x=Emo.Extent.z, y=fit)) +
-  geom_jitter(data = df, aes(x=Emo.Extent.z, y=Attention.Deployment, color = Attention.Deployment), alpha = 0.5, width = 0.5, height = 0.01) +
-  geom_line(color = "Black", size = 1.5) +
+  geom_jitter(data = df, aes(x=Emo.Extent.z, y=Attention.Deployment, 
+                             color = as.factor(Attention.Deployment)),
+              width = 0.15, height = 0.025, size = 3.5) +
+  geom_line(color = "Black", size = 4.5) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
-  labs(title = "Emotion Intensity Fails to Predict Strategy Usage") +
   scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df$Emo.Extent.z)[1],
                                                          range(df$Emo.Extent.z)[2], 
                                                          (range(df$Emo.Extent.z)[2] - range(df$Emo.Extent.z)[1])/6),0)) +
-  scale_y_continuous("Probability of Using Strategy", breaks = seq(0,1,0.2), labels = c("Reappraisal","0.2","0.4","0.6","0.8", "Distraction")) +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
   coord_cartesian(xlim = c(range(df$Emo.Extent.z)[1],
                            range(df$Emo.Extent.z)[2]), ylim = c(0,1)) +
   theme_classic() +  
   theme(legend.position = "none") +
-  theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-  theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
-  theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
-  theme(axis.title = element_text(size = 10)) +
-  theme(axis.text.x = element_text(size = 10, color = "Black")) +
-  theme(axis.text.y = element_text(size = 10, color = "Black")) 
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black")) 
 plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  setwd(Plots)
-  pdf("FN01_EmoExtent_Strategy.pdf",
-      width = 4, 
-      height = 3)
+  tiff(paste0(Plots,"Fig3.tiff"),
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
   plot
   dev.off()
   rm(plot)
@@ -691,22 +709,19 @@ m1.e <- effect("Emo_Sum.z",m1,xlevels=list(Emo_Sum.z=seq(range(df_temp$Emo_Sum.z
 m1.e <-as.data.frame(m1.e)
 head(m1.e)
 plot <- ggplot(m1.e, aes(x=Emo_Sum.z, y=fit)) +
-  geom_jitter(data = df_temp, aes(x=Emo_Sum.z, y=Attention.Deployment, color = Attention.Deployment), alpha = 0.5, width = 0.5, height = 0.01) +
-  geom_line(color = "Black", size = 1.5) +
+  geom_jitter(data = df_temp, aes(x=Emo_Sum.z, y=Attention.Deployment, 
+                             color = as.factor(Attention.Deployment)),
+              width = 0.2, height = 0.025, size = 1) +
+  geom_line(color = "Black", size = 1.75) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
-  labs(title = "Emotion Intensity Fails to Predict Strategy Usage") +
   scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df_temp$Emo_Sum.z)[1],
                                                          range(df_temp$Emo_Sum.z)[2], 
                                                          (range(df_temp$Emo_Sum.z)[2] - range(df_temp$Emo_Sum.z)[1])/6),0)) +
-  scale_y_continuous("Probability of Using Strategy", breaks = seq(0,1,0.2), labels = c("Reappraisal","0.2","0.4","0.6","0.8", "Distraction")) +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
   coord_cartesian(xlim = c(range(df_temp$Emo_Sum.z)[1],
                            range(df_temp$Emo_Sum.z)[2]), ylim = c(0,1)) +
   theme_classic() +  
   theme(legend.position = "none") +
-  theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-  theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
-  theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
-  theme(axis.title = element_text(size = 10)) +
   theme(axis.text.x = element_text(size = 10, color = "Black")) +
   theme(axis.text.y = element_text(size = 10, color = "Black")) 
 plot
@@ -755,24 +770,22 @@ m1.e <- effect("Emo_Mean.z",m1,xlevels=list(Emo_Mean.z=seq(range(df_temp$Emo_Mea
 m1.e <-as.data.frame(m1.e)
 head(m1.e)
 plot <- ggplot(m1.e, aes(x=Emo_Mean.z, y=fit)) +
-  geom_jitter(data = df_temp, aes(x=Emo_Mean.z, y=Attention.Deployment, color = Attention.Deployment), alpha = 0.5, width = 0.5, height = 0.01) +
-  geom_line(color = "Black", size = 1.5) +
+  geom_jitter(data = df_temp, aes(x=Emo_Mean.z, y=Attention.Deployment, 
+                             color = as.factor(Attention.Deployment)),
+              width = 0.2, height = 0.025, size = 1) +
+  geom_line(color = "Black", size = 1.75) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
-  labs(title = "Emotion Intensity Fails to Predict Strategy Usage") +
   scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df_temp$Emo_Mean.z)[1],
                                                          range(df_temp$Emo_Mean.z)[2], 
                                                          (range(df_temp$Emo_Mean.z)[2] - range(df_temp$Emo_Mean.z)[1])/6),0)) +
-  scale_y_continuous("Probability of Using Strategy", breaks = seq(0,1,0.2), labels = c("Reappraisal","0.2","0.4","0.6","0.8", "Distraction")) +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
   coord_cartesian(xlim = c(range(df_temp$Emo_Mean.z)[1],
                            range(df_temp$Emo_Mean.z)[2]), ylim = c(0,1)) +
   theme_classic() +  
   theme(legend.position = "none") +
-  theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-  theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
-  theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
-  theme(axis.title = element_text(size = 10)) +
+  theme(axis.title = element_text(size = 9, color = "Black")) +
   theme(axis.text.x = element_text(size = 10, color = "Black")) +
-  theme(axis.text.y = element_text(size = 10, color = "Black")) 
+  theme(axis.text.y = element_text(size = 10, color = "Black", hjust = 0.5)) 
 plot
 ```
 
