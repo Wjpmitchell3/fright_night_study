@@ -122,7 +122,7 @@ aov(Intense.z ~ Timing, data = df) %>%
   summary()
 ```
 
-We have a significant result from the ANOVA (F(2,433) = 3.62, p < 0.05). Let's run some contrasts
+We have a significant result from the ANOVA (F(2,432) = 3.99, p < 0.05). Let's run some contrasts
 
 ```{r Immediate versus Familiar Contrast}
 t.test(df$Intense.z[df$Timing == "ImmReg"],
@@ -131,7 +131,7 @@ t.test(df$Intense.z[df$Timing == "ImmReg"],
        paired = F)
 ```
 
-This result suggests there is an overall trend of a  significant deprecation in recalled affective intensity over time. We'd have to track trajectories on a person by person basis in order to know for sure. I wonder if over time individuals are also more likely to endorse reappraisal versus distraction
+This result suggests there is an overall trend of a significant deprecation in recalled affective intensity over time. We'd have to track trajectories on a person by person basis in order to know for sure. I wonder if over time individuals are also more likely to endorse reappraisal versus distraction
 
 ```{r Immediate versus Novel Contrast}
 t.test(df$Intense.z[df$Timing == "ImmReg"],
@@ -140,18 +140,9 @@ t.test(df$Intense.z[df$Timing == "ImmReg"],
        paired = F)
 ```
 
-Yet interestingly the difference between immediate novel and delayed novel only trends significant . . . 
+Yet interestingly the difference between immediate novel and delayed novel is not significant . . . 
 
-```{r Familiar versus Novel Contrast}
-t.test(df$Intense.z[df$Timing == "MemReg"],
-       df$Intense.z[df$Timing == "DelReg"],
-       alternative = "two.sided",
-       paired = F)
-```
-
-And the same exact event recalled later is not statistically different than an event recalled later. In study 1, we found that individuals recalled events in a descending order of affective intensity, which could potentially explain this result, in combination with Joanne's finding. Over time recalled events depreciate in intensity and at the same time, the events recalled later were recalled later because they were of a lower affective intensity.  
-
-```{r Visualizing Differences in Affective Intensity Over Time}
+```{r Visualizing The Difference Between Novel Immediate and Delayed Recall}
 df$Timing <- factor(df$Timing, levels = c("ImmReg", "MemReg", "DelReg"))
 ggplot(data = df, aes(x = Timing, y = Intense.z)) + 
        theme_classic()+
@@ -172,6 +163,15 @@ ggplot(data = df, aes(x = Timing, y = Intense.z)) +
        theme(axis.text.x = element_text(size = 10, color = "Black", angle=-45, vjust = 1, hjust = 0.0)) +
        theme(axis.text.y = element_text(size = 12, color = "Black")) 
 ```
+
+```{r Familiar versus Novel Contrast}
+t.test(df$Intense.z[df$Timing == "MemReg"],
+       df$Intense.z[df$Timing == "DelReg"],
+       alternative = "two.sided",
+       paired = F)
+```
+
+And the same exact event recalled later is not statistically different than an event recalled later. In study 1, we found that individuals recalled events in a descending order of affective intensity, which could potentially explain this result, in combination with Joanne's finding. Over time recalled events depreciate in intensity and at the same time, the events recalled later were recalled later because they were of a lower affective intensity.  
 
 ## Timing's Influence on Strategy Usage
 
@@ -474,36 +474,31 @@ Alright now on to our bread and butter. Therer was one question I was really stu
 
 I did consider a model specifying Timing as a random slope, but we ran into convergence issues 
 
+Note that additional models including either Cognitive Load variable (Post and Pre), Timing, the Motive variables, the anticipation variables, the fear enjoyment variable, the startle variable, age, gender, education, STAI, and BDI were originally included for models that started with both standard and person-centered z-scored emotional intensity. However, these models were moot in both cases, as emotional intensity alone failed to perform better than a null. As such, we cannot continue building fixed effects if the baseline of intensity fails to perform better than a null and they were moved to later in the script for clarity . 
+
 ```{r Affective Intensity Models}
 m0 <- glmer(Distracted ~ 1 + (1 | PID), data = df, family = binomial)
 m1 <- glmer(Distracted ~ Intense.z + (1 | PID), data = df, family = binomial)
-m2 <- glmer(Distracted ~ Intense.z + Timing + (1 | PID), data = df, family = binomial)
-m3 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
-m4 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Timing + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
 ```
 
 ```{r Affective Intensity Model Comparisons}  
 icc(m0)
 anova(m0, m1)
-anova(m1, m2)
-anova(m2, m3)
-anova(m1, m3)
-anova(m3, m4)
+anova(m0, m2)
 ```
 
 ```{r Affective Intensity Model Outputs}  
 class(m0) <- "lmerMod"
 class(m1) <- "lmerMod"
 class(m2) <- "lmerMod"
-class(m3) <- "lmerMod"
-class(m4) <- "lmerMod"
-stargazer(m0,m1,m2,m3,m4,
+stargazer(m0,m1,m2,
           type = "text", 
           title= "Affect Predicting Regulation Usage", 
-          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3", "Model 4"),
+          column.labels = c("Null Model", "Model 1", "Model 2"),
           dep.var.labels = "Strategy Usage", 
           star.cutoffs = c(0.05, 0.01,0.001),
-          covariate.labels = c("Affective Intensity (z)", "Recall, Familiar", "Recall, Novel", "Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Intercept"),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Intercept"),
           ci = T,
           notes = "")
 ```
@@ -551,10 +546,43 @@ plot
        height = 9)
   plot
   dev.off()
-  rm(plot, m0,m1,m2,m3,m4,m5,m1.e)
+  rm(plot, m0,m1,m2,m1.e)
 ```
 
 # Follow Up Analyses
+## Testing the Full Model
+
+For shits and giggles, let's run the full model (even though we shouldn't) just to see if affective intensity ever predicts strategy choice when accounting for all these other variables
+```{r Building More MLMs to Predict Usage - Standard}
+m01 <- glmer(Distracted ~ Intense.z + Timing + (1 | PID), data = df, family = binomial)
+m02 <- glmer(Distracted ~ Intense.z + Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored + (1 | PID), data = df, family = binomial)
+m03 <- glmer(Distracted ~ Intense.z + CogLoad_Post + (1 | PID), data = df, family = binomial)
+m04 <- glmer(Distracted ~ Intense.z + Startle + Fear.Enjoy + (1 | PID), data = df, family = binomial)
+m05 <- glmer(Distracted ~ Intense.z + Pos.Anticipate + Neg.Anticipate + (1 | PID), data = df, family = binomial)
+m06 <- glmer(Distracted ~ Intense.z + STAI_State + STAI_Trait + (1 | PID), data = df, family = binomial)
+m07 <- glmer(Distracted ~ Intense.z + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+m08 <- glmer(Distracted ~ Intense.z + Age + Gender + Education.Years + (1 | PID), data = df, family = binomial)
+m09 <- glmer(Distracted ~ Intense.z + Timing + Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored + CogLoad_Post + Startle + Pos.Anticipate + Neg.Anticipate + Fear.Enjoy + STAI_State + STAI_Trait + ERQ_CogReap + Age + Gender + Education.Years + (1 | PID), data = df, family = binomial)
+stargazer(m01,m02,m03,m04,m05,m06,m07,m08,m09, type = "text")
+```
+
+Nothing came up for the regular z-scored variable. Let's try person-centered. 
+
+```{r Building More MLMs to Predict Usage - Person Centered}
+m01 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Timing + (1 | PID), data = df, family = binomial)
+m02 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored + (1 | PID), data = df, family = binomial)
+m03 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + CogLoad_Post + (1 | PID), data = df, family = binomial)
+m04 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Startle + Fear.Enjoy + (1 | PID), data = df, family = binomial)
+m05 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Pos.Anticipate + Neg.Anticipate + (1 | PID), data = df, family = binomial)
+m06 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + STAI_State + STAI_Trait + (1 | PID), data = df, family = binomial)
+m07 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+m08 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Age + Gender + Education.Years + (1 | PID), data = df, family = binomial)
+m09 <- glmer(Distracted ~ Intense.pc.z + Intense.pmean.z + Timing + Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored + CogLoad_Post + Startle + Pos.Anticipate + Neg.Anticipate + Fear.Enjoy + STAI_State + STAI_Trait + ERQ_CogReap + Age + Gender + Education.Years + (1 | PID), data = df, family = binomial)
+stargazer(m01,m02,m03,m04,m05,m06,m07,m08,m09, type = "text")
+```
+
+Still nothing, though the person-mean centered z-score came up as significant, weirdly enough. Either way, we can't look too much into that; this was just a demonstration (because I know some folks are not sold on taking an information theoretic approach) that even if we just build models without testing them that we still come up empty handed with all of these covariates. 
+
 ## Regulatory Success   
 
 It would make sense that the interaction between affective intensity and regulatory usage should predict regulatory success. We should see greater regulatory success for low intensity, reappraisal events and high intensity distraction events
