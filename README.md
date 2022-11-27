@@ -1,6 +1,6 @@
 # fright_night_study
 ### Contact: BLINDED@BLINDED.edu
-Data and scripts from the manuscript: Emotional Intensity Fails to Predict Spontaneous  Regulation Strategy Usage in a Naturalistic Paradigm
+Data and scripts from the manuscript: Emotion regulation strategy usage in a quasi-naturalistic context
 
 ## Structure
 All of the data and products for the project are organized into four self-explanatory directories: **1) data**, **2) plots**, **3) qualtrics**, and **4) scripts**. 
