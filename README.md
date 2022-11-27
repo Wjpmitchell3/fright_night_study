@@ -1,6 +1,6 @@
 # The Fright Night Study
 ### Contact: BLINDED@BLINDED.edu
-Data and scripts from the manuscript: Emotion regulation strategy choice in naturalistic contexts
+Data and scripts from the manuscript: Emotion regulation strategy usage in a quasi-naturalistic context
 
 ## Structure
 All of the data and products for the project are organized into four self-explanatory directories: **1) data**, **2) plots**, **3) qualtrics**, and **4) scripts**. 
