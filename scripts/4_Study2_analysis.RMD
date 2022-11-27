@@ -30,6 +30,7 @@ NOTES:
                  influence.ME,
                  lattice,
                  lme4, 
+                 lmerTest,
                  performance,
                  sjPlot,
                  stargazer, 
@@ -505,8 +506,8 @@ stargazer(m0,m1,m2,
 
 ```{r Calculating Effect Sizes for Affective Intensity Models}
 exp(fixef(m1))
-exp(-0.084)
-exp(0.561)
+exp(-0.087)
+exp(0.558)
 ```
 
 We fail to find a model with predictive value in this relationship.

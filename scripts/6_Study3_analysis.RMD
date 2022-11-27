@@ -42,7 +42,7 @@ Indicating how I want numbers presented and formatted
   options(tinytex.verbose = TRUE)
 ```
   
-The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+The `here()` function should ideally Tidentify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
 
 ```{r Setting Working Directories}
   # Identifying our main directory
@@ -56,7 +56,7 @@ The `here()` function should ideally identify our upper-level project directory.
 ## LOADING THE ORIGINAL (EXPERIENCER) DATA 
   
 ```{r Loading experiencer dataframe}
-  df.og <- read.csv(file = paste0(WorkDir, "/data/Study_01/Derivative/df_subset.csv"), 
+  df.og <- read.csv(file = paste0(WorkDir, "/data/Study_01/Deriv/df_subset.csv"), 
                     header = T, 
                     sep=",", 
                     stringsAsFactors = T,
