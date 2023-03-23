@@ -1,6 +1,6 @@
 ---
 title: "ER Choice v. Usage - Study_1 Dataframe Creation"
-author: "Mitchell, W.J."
+author: "BLINDED"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -16,6 +16,7 @@ output: html_document
 
 ```{r Setup}
   # Setting up our libraries
+  library(here)
   library(foreign)
   library(tidyverse)
   options(scipen=100)
@@ -40,23 +41,23 @@ output: html_document
   Events <- paste("Event", 1:10, sep = "")
 ```
 
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
 ``` {r Setting Working Directory}
   # Identifying our main directory
-  WorkDir <- "C:/Users/wjpmi/Dropbox/My PC (UncleSplashysSaddnessEmporium)/Desktop/Grad School/Projects/Complete/Fright Night/"
+  WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "Public_Records/data/Study_01/Raw/")
-  Import <- paste0(WorkDir, "Public_Records/data/Study_01/Source/")
+  Export <- paste0(WorkDir, "/data/Study_01/Raw/")
+  Import <- paste0(WorkDir, "/data/Study_01/Source/")
 ```
 
 # ----- LOADING DATA -----
     
+NOTE:`setwd()` doesn't play well with R Markdown. You can use it, but you need to respecify with every chunk and it still outputs warning messages even when everything's perfect, so I've opted to just not use it enter the full filepath each time instead. 
 ``` {r Loading Raw Data}
-  # Setting out working directory
-  setwd(Import)
-
   # Reading raw data
-  df <- read.csv(file = "df_raw.csv", 
+  df <- read.csv(file = paste0(Import, "df_raw.csv"), 
                  header = T, sep=",", 
                  stringsAsFactors = F,
                  na.strings="")
@@ -82,7 +83,8 @@ output: html_document
   df <- df[,-c(1:17)]
 ```
 
-NOTE: Participants were asked to describe ten events within the six sections of the haunted house in whatever order they could recall. Afterwards, we asked them to reorder those sections and events in chronological order. When participants were asked to reorder the sections and events, the sections and events appeared on the screen in qualtrics in a randomized order. When Qualtrics outputs the reordered data from participants' rearranging, we don't see the names of the sections or events reordered; we see the relative position in which those names were presented to participants reordeded. So if the chronological fourth section was randomly placed in the second position during this task and the participant correctly moved it to the fourth position, we would see a 2 in slot 4, rather than a 4 in slot 4. The only way to identify the random order participants saw is to go back into qualtrics, look at the subjective presentation order each participant saw, and manually recode it, which is what we did. As such, the current data in section and event order is pretty useless. After recoding, Section 1 refers to the first chronological section and Event 1 refers to the first event the participant reported and we'll bring those in later. Notably this data won't tell us the order in which participants chose to reorder the events and sections; we're just making sure that a 1 means the something for every participant, and a 2 means the same thing and so on. 
+NOTE: Participants were asked to describe ten events within the six sections of the haunted house in whatever order they could recall. Afterwards, we asked them to reorder those sections and events in chronological order. When participants were asked to reorder the sections and events, the sections and events appeared on the screen in qualtrics in a randomized order. When Qualtrics outputs the reordered data from participants' rearranging, we don't see the names of the sections or events reordered; we see the relative position in which those names were presented to participants reordeded. So if the chronological fourth section was randomly placed in the second position during this task and the participant correctly moved it to the fourth position, we would see a 2 in slot 4, rather than a 4 in slot 4. The only way to identify the random order participants saw is to go back into qualtrics, look at the subjective presentation order each participant saw, and manually recode it, which is what we did. As such, the current data in section and event order is pretty useless. After recoding, Section 1 refers to the first chronological section and Event 1 refers to the first event the participant reported and we'll bring those in later. Notably this data won't tell us the order in which participants chose to reorder the events and sections; we're just making sure that a 1 means the same thing for every participant, and a 2 means the same thing and so on. 
+
 ```{r Removing unstandardized event and section data}
   # Showing that we're specifically targetting the event and section columns
   head(df[c(2:7, 338:347)])  
@@ -118,8 +120,7 @@ Now that we have appropriate column names, we can begin to introduce and merge t
 
 ``` {r Loading Event Ordering Data}
   # Reading in manually standardized event data
-  setwd(Import)  
-  EventOrdering <- read.csv(file = "reorder_events.csv", 
+  EventOrdering <- read.csv(file = paste0(Import, "reorder_events.csv"), 
                           header = T, sep=",", 
                           stringsAsFactors = F)
 ```
@@ -139,8 +140,7 @@ Now that we have appropriate column names, we can begin to introduce and merge t
 
 ``` {r Loading Section Ordering Data}
   # Reading in manually standardized section data
-  setwd(Import)  
-  SectionOrdering <- read.csv(file = "reorder_sections.csv", 
+  SectionOrdering <- read.csv(file = paste0(Import, "reorder_sections.csv"), 
                               header = T, sep=",", 
                               stringsAsFactors = F,
                               na.strings="")
@@ -161,7 +161,7 @@ Now that we have appropriate column names, we can begin to introduce and merge t
 
 # ----- REORGANIZING DATAFRAME -----
 
-NOTE: Okay, now that the events and sections have been stadardized in the dataframe we just made, we are going to reorganize them in the subjective chronological that each participant reported them occurring in. 
+NOTE: Okay, now that the events and sections have been standardized in the dataframe we just made, we are going to reorganize them in the subjective chronological that each participant reported them occurring in. 
 
 ``` {r Creating a Temporary Dataframe}
   # Creating a temporary empty dataframe of the same dimensions as the current 
@@ -314,8 +314,7 @@ We now don't really have much use for the endorsed emotions columns, so I'm just
 We now have a plethora of supplementary data that was collected via Google Forms that we want to integrate 
 ``` {r Loading Supplementary Data}
   # Loading supplementary data 
-  setwd(Import)   
-  df_supp <- read.csv(file = "df_raw_supp.csv", 
+  df_supp <- read.csv(file = paste0(Import, "df_raw_supp.csv"), 
                              header = T, 
                              sep=",", 
                              stringsAsFactors = F)
@@ -324,7 +323,7 @@ We now have a plethora of supplementary data that was collected via Google Forms
 We're going to create a new variable containing the current names of the supplementary dataframe columns. We'll use this later to clean column names up.
 ``` {r Recording Supplementary Column Names As A Variable}
   # Creating a column name variable
-  SuppCols <- names(df_supp[,2:ncol(df_supp)])
+  SuppCols <- names(df_supp[,3:ncol(df_supp)])
 ``` 
 
 We're now going to merge the supplementary data with the main dataframe now.
@@ -388,7 +387,7 @@ Now we'll populate the new dataframe with the data that will largely be unaffect
     # and copying over the data to the new one
     # Because there are ten times fewer rows in the original df, I first divide i by 10, which gives me a fraction
     # I then round up so that the first ten rows of the new dataframe will all pull data from the first row of the old dataframe and so on. 
-    df.temp[i,c(1,49:64,66:234)] <- df[ceiling(i/10),c(1,322:337,478:646)]
+    df.temp[i,c(1,49:232)] <- df[ceiling(i/10),c(1,322:337,479:646)]
   }
 ```
 
@@ -396,12 +395,6 @@ Because events recur in a predictable pattern, we can just use the rep() command
 ``` {r Filling in Event Data}
   # Populate the event column
   df.temp$Event <- rep(seq(1,10,1),length(rownames(df)))
-```
-
-``` {r Removing Unnecessary Timestamp Variable}
-  # Removing the unnecessary timestamp variable
-  df.temp <- subset(df.temp,
-                    select = -c(PreQ1_Timestamp))
 ```
 
 Now we're gonna move the data over, but we're gonna do it in chunks
@@ -482,8 +475,7 @@ Now we'll add those event IDs to the dataframe
 Now we'll load in the regulation strategy data
 ``` {r Loading Regulation Strategy data}
   # Loading in the manually coded strategy data
-  setwd(Import)   
-  df_strat <- read.csv(file = "df_raw_strategies.csv", 
+  df_strat <- read.csv(file = paste0(Import, "df_raw_strategies.csv"), 
                              header = T, 
                              sep=",", 
                              stringsAsFactors = F)
@@ -595,7 +587,7 @@ Now we'll migrate that data according to emotion, event, and PID
     #Supplemental Data
     df.temp[((i-1) * 14) + 1:14,c(1,2,17:201)] <- df[i,c(1,2,49:233)]
     #Regulation Strategies
-    df.temp[((i-1) * 14) + 1:14,c(11:16)] <- df[i,c(235:240)]
+    df.temp[((i-1) * 14) + 1:14,c(11:16)] <- df[i,c(234:239)]
     #Event Descriptions
     df.temp$Event.Desc[((i-1) * 14) + 1:14] <- rep(df$Event.Desc[i],14)
     #Event Keys
@@ -627,6 +619,5 @@ For the last time, we're going to rename our dataframe
 
 And we are finally done! 
 ``` {r Exporting my hard work}
-  setwd(Export)
-  write.csv(df,file="df.csv", na = "N/A")
+  write.csv(df,file = paste0(Export, "df.csv"), na = "N/A")
 ```  

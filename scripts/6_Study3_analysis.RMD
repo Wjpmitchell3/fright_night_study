@@ -1,12 +1,12 @@
 ---
 title: "ER Choice v. Usage - Study 3"
-author: "William J. Mitchell"
+author: "BLINDED"
 date: "2021 / 08 / 05"
-output: html_document
+output:  html_document
 ---
 
 NAVIGATION / QUESTIONS:
-+ In previous analyses and reviews of our haunted house data set, we've found that affective intensity predicted regulation extent, but not regulation strategy choice. This is what we expected to find, but it's in contradiction with the vast amount of lab research which finds some massive associations between choice and intensity (on the magnitude of r+ = 0.65 - 0.80). If that were the case, power analyses suggested even 20 people should have been enough to demonstate the relationship. Importantly, we were not decontextualizing or isolating our stimuli of interest, which many lab studies understandly and necessarily do. What we wanted to see with this experiment is whether decontextualizing the experiences of people who previously showed no choice-intensity relationships introduces the lab-supported patterns.
++ In previous analyses and reviews of our haunted house data set, we've found that affective intensity predicted regulation extent, but not regulation strategy choice. This is what we expected to find, but it's in contradiction with the vast amount of lab research which finds some massive associations between choice and intensity (on the magnitude of r+ = 0.65 - 0.80). If that were the case, power analyses suggested even 20 people should have been enough to demonstrate the relationship. Importantly, we were not decontextualizing or isolating our stimuli of interest, which many lab studies understandably and necessarily do. What we wanted to see with this experiment is whether decontextualizing the experiences of people who previously showed no choice-intensity relationships introduces the lab-supported patterns.
 
 PREDICTIONS:
 + We predict that as affective intensity increases, forecasters, or people who are predicting what they would do in the given situation but had not experienced it, will be more likely to select distraction over reappraisal. We hope that this relationship holds up even after accounting for important individual difference measures like ERQ. 
@@ -20,12 +20,19 @@ NOTES:
 
 Specifying our package usage
 ```{r Packages I Use}
-   pacman::p_load(effects, 
-                  lme4, 
-                  performance, 
-                  psych, 
-                  stargazer, 
-                  tidyverse)
+  # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
+  # Loading in my packages with my pacman manager
+  pacman::p_load(effects, 
+                 here,
+                 lme4, 
+                 performance, 
+                 psych, 
+                 stargazer, 
+                 tidyverse)
 ```
 
 Indicating how I want numbers presented and formatted
@@ -35,27 +42,25 @@ Indicating how I want numbers presented and formatted
   options(tinytex.verbose = TRUE)
 ```
   
-Specifying my working directories
+The `here()` function should ideally Tidentify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
 ```{r Setting Working Directories}
   # Identifying our main directory
-  WorkDir <- "C:/Users/wjpmi/Dropbox/My PC (UncleSplashysSaddnessEmporium)/Desktop/Grad School/Projects/Complete/Fright Night/Public_Records/"
+  WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "data/Study_03/Derivative/")
-  Import <- paste0(WorkDir, "data/Study_03/Raw/")
-  Plots <- paste0(WorkDir, "plots/")
+  Import <- paste0(WorkDir, "/data/Study_03/Raw/")
+  Plots <- paste0(WorkDir, "/plots/")
 ```
-
 
 ## LOADING THE ORIGINAL (EXPERIENCER) DATA 
   
 ```{r Loading experiencer dataframe}
-  setwd(WorkDir)
-  df.og <- read.csv(file = "data/Study_01/Derivative/df_subset.csv", 
+  df.og <- read.csv(file = paste0(WorkDir, "/data/Study_01/Deriv/df_subset.csv"), 
                     header = T, 
                     sep=",", 
-                    stringsAsFactors = F,
-                    na.strings=c("","N/A"),
+                    stringsAsFactors = T,
+                    na.strings=c("","NA", "N/A"),
                     row.names = 1)
 ```
 
@@ -72,21 +77,18 @@ paste("Total Number of Distraction Events:", nrow(distinct(subset(df.og, df.og$S
 ## LOADING THE FOLLOW UP (PREDICTOR) DATA 
 
 ```{r Loading standard dataframe}
-  setwd(Import)
-  df.fu <- read.csv(file = "df.csv", 
+  df.fu <- read.csv(file = paste0(Import, "df.csv"), 
                     header = T, 
                     sep=",", 
-                    stringsAsFactors = F,
-                    na.strings=c("","N/A"),
-                    row.names = 1)
+                    stringsAsFactors = T,
+                    na.strings=c("", "NA", "N/A"))
 ```
 
 ```{r Loading person level dataframe}
-  setwd(Import)
-  df.fu.pl <- read.csv(file = "df_personlevel.csv", 
+  df.fu.pl <- read.csv(file = paste0(Import, "df_personlevel.csv"), 
                     header = T, 
                     sep=",", 
-                    stringsAsFactors = F,
+                    stringsAsFactors = T,
                     na.strings=c("","N/A"),
                     row.names = 1)
 ```
@@ -107,7 +109,6 @@ ggplot(data = df.fu.pl, aes(x = group, y = DERS.LimitAccess.FU)) +
        labs(x ="") +
        geom_jitter(aes(alpha=0.2, color = group),shape=16, position=position_jitter(0.2)) + 
        geom_violin(trim=F, alpha=0.5) +
-       scale_color_nord(palette = "afternoon_prarie", discrete = T) +
        ylab("DERS - Limited Access to ER Strategies Subscale") +
        theme(legend.position="none") +
        geom_boxplot(width=0.2, color="black", alpha=0.2)
@@ -132,9 +133,11 @@ t.test(x=df.og.pl$ERQ_Supp.OG, y = df.fu.pl$ERQ_Supp.FU,alternative = "two.sided
 t.test(x=df.og.pl$IUS_F2.OG, y = df.fu.pl$IUS_F2.FU,alternative = "two.sided",paired = F,var.equal = F)
 ```
 
-The two samples do not differ significantly by ERQ Reappraisal scores (xexp = 29.9 xfor= 31.0, t(45) = -1). However, significant differences were observed between the two groups for the expressive suppression ERQ subscale (xexp = 12.5, xfor = 15.7, t(48) = -3, p < 0.001) and the IUS Factor 2 subscale (xexp = 30.4, xfor = 12.6, t(35) = 11, p < 0.001). Though ERQ subscales  demonstrated no significant predictive utility towards regulatory effort in Study 1, IUS Factor 2 demonstrated a negative association with regulation effort (b = -0.052, 95% CI=[-0.080, -0.025], p < 0.001). Neither scale was assocaited with strategy usage in Study 1.  
+The two samples do not differ significantly by ERQ Reappraisal scores (xexp = 29.9 xfor= 31.0, t(45) = -1). However, significant differences were observed between the two groups for the expressive suppression ERQ subscale (xexp = 12.5, xfor = 15.7, t(48) = -3, p < 0.001) and the IUS Factor 2 subscale (xexp = 30.4, xfor = 12.6, t(35) = 11, p < 0.001). Though ERQ subscales  demonstrated no significant predictive utility towards regulatory effort in Study 1, IUS Factor 2 demonstrated a negative association with regulation effort (b = -0.052, 95% CI=[-0.080, -0.025], p < 0.001). Neither scale was associated with strategy usage in Study 1.  
 
 # AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION  
+
+Whenever we want to examine the extent to which a continuous numeric variable predicts one of two possible outcomes, the appropriate test is a binary logistic regression (as opposed to a linear regression). 
 
 ```{r Restructuing Variables}
 df.fu$Strategy.FU <- as.factor(df.fu$Strategy.FU) %>%
@@ -209,33 +212,32 @@ m1.e <- effect("Emo.Extent.z",m1,xlevels=list(Emo.Extent.z=seq(range(df.fu$Emo.E
 m1.e <-as.data.frame(m1.e)
 head(m1.e)
 plot <- ggplot(m1.e, aes(x=Emo.Extent.z, y=fit)) +
-  geom_jitter(data = df.fu, aes(x=Emo.Extent.z, y=Strategy.FU_num, color=Strategy.FU_num), size = 0.1, alpha = 0.1, width = 0.5, height = 0.025) +
-  geom_line(color = "Black", size = 1.5) +
+  geom_jitter(data = df.fu, aes(x=Emo.Extent.z, y=Strategy.FU_num, 
+                                color=as.factor(Strategy.FU_num)), 
+              width = 0.25, height = 0.035, size = 1, alpha = 0.10) +
+  geom_line(color = "Black", size = 4.5) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
-  labs(title = "Emotion Intensity Predicts Strategy Choice",
-       subtitle = ("OR = 1.056 **")) +
   scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df.fu$Emo.Extent.z)[1],
                                                          range(df.fu$Emo.Extent.z)[2], 
                                                          (range(df.fu$Emo.Extent.z)[2] - range(df.fu$Emo.Extent.z)[1])/6),0)) +
-  scale_y_continuous("Probability of Choosing Strategy", breaks = seq(0,1,0.2), labels = c("Reappraisal","0.2","0.4","0.6","0.8", "Distraction")) +
+  scale_y_continuous("Probability of Choosing Distraction", breaks = seq(0,1,0.20)) +
+  scale_color_manual(values = c("#F8766D", "#00BFC4")) +
   coord_cartesian(xlim = c(range(df.fu$Emo.Extent.z)[1],
                            range(df.fu$Emo.Extent.z)[2]), ylim = c(0,1)) +
   theme_classic() +  
   theme(legend.position = "none") +
-  theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-  theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
-  theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
-  theme(axis.title = element_text(size = 10)) +
-  theme(axis.text.x = element_text(size = 10, color = "Black")) +
-  theme(axis.text.y = element_text(size = 10, color = "Black")) 
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black"))  
 plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  setwd(Plots)
-  pdf("FN02_EmoExtent_Strategy.pdf",
-      width = 4, 
-      height = 3)
+  tiff(paste0(Plots, "Fig8.tiff"),       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
   plot
   dev.off()
   rm(plot, m0, m1, m2, m3, m1.e)
@@ -256,6 +258,7 @@ icc(m0)
 ```
 
 ```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+# Some of these models will fail to converge and that's okay. We won't even get to those later failed to converge models anyway. 
 m1 <- glmer(Strategy.FU ~ Emo_Mean.z + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
 m2 <- glmer(Strategy.FU ~ Emo_Mean.z + Age + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
 m3 <- glmer(Strategy.FU ~ Emo_Mean.z + Gender.Identity + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
@@ -325,17 +328,6 @@ plot <- ggplot(m1.e, aes(x=Emo_Mean.z, y=fit)) +
   theme(axis.text.y = element_text(size = 10, color = "Black")) 
 plot
 ```
-
-```{r Exporting Regulation & Intensity Regression}
-  setwd(Plots)
-  pdf("FN02_EmoMean_Strategy.pdf",
-      width = 4, 
-      height = 3)
-  plot
-  dev.off()
-  rm(plot, m1,m1.e,m2,m3)
-```
-
 
 # AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION AT EVENT LEVEL (SUM)
 
@@ -414,14 +406,4 @@ plot <- ggplot(m1.e, aes(x=Emo_Sum.z, y=fit)) +
   theme(axis.text.x = element_text(size = 10, color = "Black")) +
   theme(axis.text.y = element_text(size = 10, color = "Black")) 
 plot
-```
-
-```{r Exporting Regulation & Intensity Regression}
-  setwd(Plots)
-  pdf("FN02_EmoSum_Strategy.pdf",
-      width = 4, 
-      height = 3)
-  plot
-  dev.off()
-  rm(plot, m0,m1,m1.e,m2,m3,m4,m5,m6,df_temp,df.fu,df.fu.pl,df.og,df.og.pl)
 ```
