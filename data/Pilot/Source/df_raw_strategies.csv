@@ -1,0 +1,278 @@
+ID,Description,Reappraisal,Situation Modification,Situation Selection,Attention Deployment,Response Modulation,MultipleStrategies
+D001,Focused on my breathing,0,0,0,1,0,0
+D002,Walked faster,0,0,0,0,0,0
+D003,Laughed,0,1,0,0,0,0
+D004,Focused on the fact it was fake and the actor could not touch me,1,0,0,1,0,1
+D005,Avoided eye contact ,0,0,0,0,0,0
+D006,Avoided eye contact ,0,0,0,0,0,0
+D007,Laughed ,0,1,0,0,0,0
+D008,Looked down,0,0,0,1,0,0
+D009,Sought social support,0,1,0,1,0,1
+D010,"Walked fasted, tried to not make eye contact",0,0,0,1,0,0
+D011,I started to change the way I was thinking by reminding myself it wasn't real,1,0,0,0,0,0
+D012,"Since I knew the school bus was a short event, I just tried to get out as quickly as posssible",0,0,0,0,0,0
+D013,Kept reminding myself to be prepared for the loud noises and jump scares. To expect the unexpected and if fear came to me to look down. A lo of preparation for the upcoming,0,0,0,1,0,0
+D014,Reminded myself that it wasn't real and this was a cliche scare. However at the end I looked down and tried to get out as soon as possible,1,0,0,1,0,1
+D015,"This room was short and not super scary, but had to remind myself it was all fake",1,0,0,0,0,0
+D016,"Although this event was not scary itself, I was preparing myself for the inevitable over-stimulation to come",0,0,0,0,0,0
+D017,Just felt like I was focused on getting out rather than the scares going on around me,0,0,0,1,0,0
+D018,Tried to focus on the figures and decide which ones were people and which ones were mannequins,1,0,0,1,0,1
+D019,Shrieked to let out the scared then talked to myself afterwards and focused on the person in front of me,0,0,0,1,0,0
+D020,Made jokes,0,1,0,0,0,0
+D021,Laughed at it because I had been tense right before and this dissipated some of the stress,0,1,0,0,0,0
+D022,Tried to calm down by responding to the actors,0,1,0,0,0,0
+D023,This was the last part so I was tired from the beginning rooms and all of us were holding onto each other's backs so we wouldn't be as afraid,0,1,0,0,0,0
+D024,I looked away from what was creepy looking and thought instead about the goofiness of the actors/words they chose vs. the gross props.,1,0,0,1,0,1
+D025,I tried to be observant and take the information I gathered going forward into the next room. I tried to be attentive but focus on moving forward.,0,0,0,1,0,0
+D026,I looked away and tried to remember that it would be over soon and we would be out of the room. I remembered I was with other people.,0,0,0,1,0,0
+D027,"I tried to remember that all the actors were trying their best and not to get caught up in the specifics of what they said when they were trying to scare me and follow me around. Overall, it was hard to change my feeling of annoyance. ",1,0,0,0,0,0
+D028,"I told myself that the rats weren't real and it was just a joke, I laughed and tried not to think about them (but inevitably still looked around at the ground).",1,1,0,1,0,1
+D029,I thought about the actor and if what they were doing was painful- I empathized. ,1,0,0,0,0,0
+D030,I was very observational and tried to be clear-headed and not surprised or jittery going forward.,0,0,0,0,0,0
+D031,I talked back with the actor and tried to make a dialogue. I remembered that it was just another person trying to do their job and have fun and I went along with it. ,1,1,0,0,0,1
+D032,I tried to stay close to group members and remind myself that there was nothing there that could harm me.,1,0,0,0,0,0
+D033,"Told myself it wasn't real, tried to get through as quickly as possible.",1,0,0,0,0,0
+D034,I had to remind myself to keep moving despite the fact that I couldn't see where I was going.,0,0,0,0,0,0
+D035,I focused on there movements just in case they changed direction and started moving toward me.,0,0,0,1,0,0
+D036,I thought of pop culture/TV references that have similar imagery.,1,0,0,1,0,1
+D037,I was just confused more than anything else. I just tried to walk past the man.,0,0,0,0,0,0
+D038,I didn't really find the guy swinging the ax to be that scary. ,0,0,0,0,0,0
+D039,This section wasn't that scary; I think I focused on the bright colors more than anything else.,0,0,0,1,0,0
+D040,"I kept telling myself that ""this wasn't real"" and tried to focus on what was real (the people around me; etc).",1,0,0,1,0,1
+D041,I focused on this guy a lot throughout our time here. He was just as scared as I was so it made me laugh.,0,0,0,1,0,0
+D042,I reminded myself that nothing could hurt me and tried not to anticipate someone jumping out at me too much. ,1,0,0,0,0,0
+D043,I reminded myself that the chainsaw did not have a chain on it and that nothing was able to hurt me inside of the haunted house. ,1,0,0,0,0,0
+D044,I was overwhelmed by all of the monsters that were trying to talk to me and get in my face. I tried not to look at them too much or engage with them. ,0,0,0,0,0,0
+D045,I tried to pay attention to the details in the surrounding and walked faster ,0,0,0,1,0,0
+D046,I paid extra attention to the entire environment and tried to pick up the cues/screams from the group walking in front of us,0,0,0,1,0,0
+D047,"I looked down or grabbed one of the members' arm, walking faster to escape",0,1,0,1,0,1
+D048,I sought for social support and walked faster,0,1,0,1,0,1
+D049,I tried to walk faster and to get pass of the scene ,0,0,1,0,0,0
+D050,I walked faster and avoid eye contact,0,0,0,0,0,0
+D051,"I tried to think about why they have these behaviors, changing perspectives",1,0,0,1,0,1
+D052,I tried to stay closer to my friend and grab their arms for social support,0,1,0,0,0,0
+D053,I tried to focused on something else or made a real eye contact with the actor,0,0,0,1,0,0
+D054,In the moment I was uncomfortable I focused on something else: the room around me. After that I just changed the situation by taking action. ,0,0,0,1,0,0
+D055,"I sought social support (asked for indications and help as I was holding my friend) I focused on ""getting things done"", so I guess just thinking about being in the present moment and going one step at a time knowing that it was OK and that I could do it. ",0,1,0,1,0,1
+D056,I would hold on tight to Albert and my sister.,0,1,0,0,0,0
+D057,I would walk faster,0,0,0,0,0,0
+D058,I would hide behind my sister.,0,1,0,0,0,0
+D059,I would walk faster,0,0,0,0,0,0
+D060,I would hide behind Albert,0,1,0,0,0,0
+D061,I was trying to stay close tot the people ahead of me so no one could pop out at me.,0,1,0,0,0,0
+D062,"realized it was her being in character, but i was freaked out nonetheless",1,0,0,0,0,0
+D063,"it surprised me that a dad would be so interactive at a haunted house. once i processed it, i was over it",0,0,0,0,0,0
+D064,i wondered why she loved horror so much and concluded that it was her own reality. i.e the same way i enjoy soccer she enjoys all things horror,0,0,0,0,0,0
+D065,i just mentally-noted that the kid was genuinely enjoying the show,0,0,0,1,0,0
+D066,saw that they were black and it killed the fear i had,0,0,0,0,0,0
+D067,"tried to remember that i was directly behind a girl and she was enjoying it, so maybe i should be less afraid too",0,0,0,1,1,1
+D068,focused on the fact that they were effects alone ,1,0,0,1,0,1
+D069,Look for the moment actors so that they wont scare me as bad.,0,0,0,0,0,0
+D070,Looked at the person in front of me.,0,0,0,1,0,0
+D071,It was not scary but creative having the actors around the rotunda not moving.,1,0,0,0,0,0
+D072,close my eyes.,0,0,0,0,0,0
+D073,focused on the next section.,0,0,0,1,0,0
+D074,Walk fast.,0,0,0,0,0,0
+D075,Take a deep breath.,0,0,0,0,0,0
+D076,I just tried to be more alert,0,0,0,0,0,0
+D077,I regulated my emotions by being more alert because I noticed there were people in the room with us. ,0,0,0,0,0,0
+D078,It was a little startling at first so I focused on what instrument they actually and that it wasn't threatening.,1,0,0,1,0,1
+D079,I was more alert because we were told to stay away from the doctor.,0,0,0,0,0,0
+D080,I realized what was happening and that helped me regulate my fear.,1,0,0,0,0,0
+D081,I just focused on my breath to try and relaxed as we walked through. ,0,0,0,1,0,0
+D082,I tried to move through the area quickly because that noise makes me feel like I'm getting a cavity filled at the dentist office.,0,0,0,0,0,0
+D083,I jumped and tried to walk past the noises quickly. I guess you could say I was...SHOCKED.,0,0,0,0,0,0
+D084,Moving quickly through the area and preparing myself for someone to jump out and scare me.,0,0,0,0,0,0
+D085,I tried to walk slowly and be as attentive to my surroundings and to who was possibly going to jump out etc,0,0,0,1,0,0
+D086,Continued to walk forward and just focus on enjoying what was ahead,0,0,0,0,0,0
+D087,"Tried to stay focused on the person ahead of me, and prepared for what might be around the next corner",0,0,0,1,0,0
+D088,Tried to walk slow and pay attention to where the person ahead of me was going. Was focused on my footsteps and not falling ,0,0,0,1,0,0
+D089,Focused on the people ahead and made sure to take careful steps along with using the railings,0,0,0,1,0,0
+D090,Kept reminding myself it was just a show and everyone else was experiencing the same thing as me,1,0,0,0,0,0
+D091,i used my hands to feel through where we were going. Moved slow and followed the recommendations of the group,0,0,0,0,0,0
+D092,Focused on going forward,0,0,0,1,0,0
+D093,focused on going forward,0,0,0,1,0,0
+D094,cursed and tried to get through it faster,0,0,0,0,0,0
+D095,i would try to focus on getting through the room/ obstacle as quickly as possible,0,0,1,1,0,1
+D096,i picked up my pace so I could  get away from chainsaw lady,0,0,1,0,0,0
+D097,i thought about looking forward to how fun the experience would be,0,0,0,1,0,0
+D098,"I tried hard to focus on where I was going, as i could not see well and not bump into any of the hanging bodies",0,0,0,1,0,0
+D099,"while momentarily feeling a bit dizzy, I took a deep breath and focused on my steps. luckily by that time it was the end of the phase and we re grouped. ",0,0,0,1,0,0
+D100,reminded myself the entire event is for fun and to enjoy ,1,0,0,0,0,0
+D101,I tried my best on getting the glasses to stay on my face. towards the end it worked and it was the quarantine 4d phase was really cool to experience ,0,0,0,0,0,0
+D102,I thought about preparing for what would come next,0,0,0,1,0,0
+D103,I mitigated my fear by making jokes ('social support') and thinking about the life of prisoners and by being very alert to prevent a big startle response.,0,1,0,0,0,0
+D104,I was surprised at how long the room was because I thought that section would be shorter so I thought to myself that this won't go on for too long.,0,0,0,0,0,0
+D105,I was trying to make sure I didn't get lost or accidentally run into someone else while in there.,0,0,0,0,0,0
+D106,The electricity was really bright so I looked away for a second in order to be less surprised.,0,0,0,0,0,0
+D107,I was trying my best to regain my balance and to calm down.,0,0,0,0,0,0
+D108,"Tried to calm down pay, look around and just breath",0,0,0,0,1,0
+D109,"Breathing, thinking and telling myself that it will be fine. ",0,0,0,1,1,1
+D110,"Holding my ears, looking away, walking fast",0,0,0,0,0,0
+D111,I told myself it will be OK before I went on the bus. I just tried to not pay too much attention on the surroundings ,0,0,0,1,1,1
+D112,I didn't do anything. I just tried to focus so I could walk through it. ,0,0,0,0,0,0
+D113,"Breathing, encourage myself to continue to walk",0,0,0,0,0,0
+D114,walking fast. Avoiding actors. Follow peers. ,0,0,0,0,0,0
+D115,"Look away, holding ears, walking fast
+",0,0,1,0,0,0
+D116,Encourage myself. Leaning to peers. Peer support. ,0,1,0,0,0,0
+D117,Sought social support. ,0,1,0,0,0,0
+D118,"I tried to tell myself it wasn't real, I looked away at times, tried thinking of something else at the time",1,0,0,1,0,1
+D119,"I tried looking away, changing my thinking, focused on something else",0,0,0,1,0,0
+D120,"I had to look away, think of something else, tell myself it wasn't real",1,0,0,1,0,1
+D121,"I had to look down and away from the strobe lights, tell myself I was going to end soon",0,0,0,1,0,0
+D122,"talking to the group, focusing on something else",0,1,0,1,0,1
+D123,I looked away,0,0,0,1,0,0
+D124,changed the way I was thinking ,0,0,0,0,0,0
+D125,changing the way I was thinking,0,0,0,0,0,0
+D126,changed the way I was thinking,0,0,0,0,0,0
+D127,"looking down, telling myself it was about to end",0,0,0,1,0,0
+D128,I breathed and kept my arms close to myself and moved quickly and tried not to think about it (focused on moving forward and did not look at them).,0,0,0,1,0,0
+D129,"I remembered that they were just actors and also that since I didn't have the touch necklace, that they couldn't touch me. ",1,0,0,0,0,0
+D130,"I breathed, and thought about how they couldn't touch me because I didn't have the touch necklace. ",1,0,0,0,0,0
+D131,"I breathed slowly and moved quickly through the hallway without looking around, only looking straight ahead to try to focus on other things.",0,0,0,1,0,0
+D132,I mostly focused on the mechanism that was there and saw it as a machine. I also recognized that it couldn't spook me because it was already out so couldn't pop out at me and scare me.,1,0,0,1,0,1
+D133,"I did not like that I had to bend down far to get under the lasers (the rain makes my joints hurt...). Therefore, I also felt tense. I was also a little fearful that things were going to run out at me. But I breathed through it and tried to move quickly. ",0,0,0,0,0,0
+D134,I did not like the loud noise and that it was getting close to me so that made me irritable. I walked quickly by it to avoid it from potentially touching me and reminded myself that it couldn't touch me. ,1,0,0,0,0,0
+D135,"I breathed slowly, and remembered that they were just people in masks and that also they couldn't touch me because I wasn't wearing the touch necklace",1,0,0,0,0,0
+D136,"I breathed slowly, and remembered that when I did this before in previous years, that it did not last very long. But I needed to mostly take long, slow breaths to enter into it",0,0,0,0,0,0
+D137,Tried to search out and find where the jump scare was going to come from. The anticipate the next move,0,0,0,0,0,0
+D138,It mostly made me laugh and curious about the mechanics of it,1,0,0,0,0,0
+D139,I just let the adrenaline of being shocked settle and kept moving,0,0,0,0,1,0
+D140,It was tough to walk but I just focused on moving ahead and breathing ,0,0,0,1,0,0
+D141,Just breathing and focusing on what was in front. I was surprised at how long it felt but enjoyed the sensation and focused on that,0,0,0,1,0,0
+D142,"Trying to remember it wasn't real, and to prime/prepare myself for jump scares so they wouldn't be as bad. At least I'd be able to tell myself, ""I was expecting that.""",1,0,0,1,0,1
+D143,"Focused on the people around me, made sure not to look at the actors.",0,0,0,1,0,0
+D144,"I did not try to change my attentiveness because I felt like it gave me more control (even though it really gave me none). The people yelling at us to move around the lasers were really annoying - I figured that I'd be easier to scare if I were focusing on something else, so I didn't listen to them and rationalized that they wouldn't actually hurt us, so it was fine to just walk.",1,0,0,1,0,1
+D145,"This felt more like an exercise in discomfort. It was all pretty gruesome, but not that frightening.",0,0,0,0,0,0
+D146,"I know that the goal was to be scary, but I hate loud noises regardless. So I was frustrated by this feature, but there was nothing I could do about it. Instead, I just reminded myself that it would be over soon, and that everything was ok.",1,0,0,0,1,1
+D147,These were not so much scary as annoying and unpredictable. I tried to modulate my surprise and not be 'gotten' by them. I did that by listening ahead for the air pump sounds and knowing roughly where they were. It worked some of the time.,0,0,0,0,0,0
+D148,"I was being extra attentive and looking behind me all the time to make sure I didn't get surprised by anything. That tenseness and attentiveness actually helped, overall. But it was nerve-wracking and scary. In the last section, the girl in front of me did suggest that we all keep a hand on each other's backs so as to stay together and not be as frightened. It helped a little!",0,0,0,1,0,0
+D149,"We were able to talk in the lines, which really helped manage the fear.",0,1,0,0,0,0
+D150,"I felt that it was pretty normal to be disgusted by this thing, so I didn't really try to change that. But I found I couldn't NOT pay attention to it. That was strange. It was just such an odd thing to see one of the actors not trying to be super scary, but actually trying to calm something down. It was the most out of place and strange things in the whole event.",0,0,0,0,0,0
+D151,"This was the one thing I really couldn't avoid or get away from. Instead, we all vocalized how uncomfortable we were to each other, which helped dispel some of the discomfort.",0,1,0,0,0,0
+D152,I tried to talk to my neighbor and make a few jokes under my breath to make it better. ,0,1,0,0,0,0
+D153,Talked to the other people in line. ,0,1,0,0,0,0
+D154,I tried to just get through it quickly. I didn't feel like I could regulate any of my feelings because I couldn't actually see where I was going so I couldn't stop and just had to get through. ,0,0,0,0,0,0
+D155,I thought these people would see we were part of the study giving our ratings and let us be! So it surprised me a bit because they came out of nowhere. ,0,0,0,0,0,0
+D156,Looked at the ground and didn't make eye contact with actors. We couldn't seek social support because we had to stand in a single file line!!,0,0,0,1,0,0
+D157,Looked at the floor as soon as I made this connection. ,0,0,0,1,0,0
+D158,This was my way of regulating feeling fearful. I was mostly irritated at my lack of knowledge of certain variable classifications and thought I need to study those more. ,0,0,0,0,0,0
+D159,I just didn't look at this guy. Eyes on the ground probably cursing at Dave Gregory out loud. ,0,0,0,1,0,0
+D160,If I was feeling fearful I just took the glasses off so I wouldn't see the people. ,0,1,0,1,0,1
+D161,"I was shocked at first because I wasn't expecting the ground to move when I walked on it and I liked that feature of the haunted house, but I got adjusted to it and my shock went away.",0,0,0,0,0,0
+D162,It caught me by surprise at first but then the initial shock went away and then I did not care anymore,0,0,0,0,0,0
+D163,"That was so hilarious that I was laughing so hard when it happened, but then it went away after we left that area.",0,1,0,0,0,0
+D164,I tried to get through it as quickly as possible and not look at anyone,0,0,1,1,0,1
+D165,Trying to stay on the side of the hallway away from them and avoid them as much as possible,0,0,1,0,0,0
+D166,Tried to move away from him quickly,0,1,0,0,0,0
+D167,Get away from him,0,0,0,0,0,0
+D168,Just tried to maintain my balance and get through it,0,0,0,0,0,0
+D169,Well I tried to be as scared as possible. I wanted to get even more scared! I stayed more focus looking at all the people on the bus,0,0,0,0,0,0
+D170,Chainsaws are loud! I tried to move quicker to escape the noise,0,0,0,0,0,0
+D171,Focused! I had no idea where we were headed. Just loom at whos in front of you,0,0,0,0,0,0
+D172,Walked faster and away ,0,0,0,0,0,0
+D173,Kept walking forward knowing that it will end soon! (the strobe),0,0,0,0,0,0
+D174,i went through only after the light flickered on so that i could see what was inside and know who might jump out at me,0,0,0,0,0,0
+D175,stood still until i realized they wouldn't touch me then kept moving forward,1,0,0,0,0,0
+D176,faced the monster to see it fully then walked away after seeing it as just a prop,1,0,0,0,0,0
+D177,going through it quickly,0,0,0,0,0,0
+D178,"It was difficult for me to ignore the fact that we were walking through a haunted attraction, where people are getting paid to scare you and act spooky",1,0,0,0,0,0
+D179,"I noticed the guy behind the window as we walked around it. He seemed very focused on his window related operations, which made the window slamming feel less personal",1,0,0,1,0,1
+D180,Being ignored by the actors killed the immersion a bit. Although I dont think it would have been much better if he interacted with me. I tend to cringe a bit when actors try to interact with me. I just have a difficult time getting in the mood,0,1,0,0,0,0
+D181,"I tried opening up my mind to the experience, and to forget that it was all just acting, but the people in this room seemed pretty unenthusiastic and kinda just stood around, which took a bit away from the immersion. ",1,0,0,0,0,0
+D182,focused  on the people behind the mask and related to absurdity of the situation ,1,0,0,1,0,1
+D183,focused on something else,0,0,0,1,0,0
+D184,i got very close to the person in front of me.,0,1,0,0,0,0
+D185,focused on the set design,0,0,0,1,0,0
+D186,Laughed about the situation,0,1,0,0,0,0
+D187,change the way I was thinking,0,0,0,0,0,0
+D188,I tried to not be as openly excited and things like that. I wanted to kind of keep my emotions somewhat blank because I just wanted to see how fearful I felt without thinking about being excited or nervous or anything. Any regulating of my emotions that I did was just changing the way I was thinking and trying to remove bias from my active thoughts.,0,0,0,0,1,0
+D189,The crowd energy was feeding my excitement and her questions made me more excited as well,0,0,0,0,0,0
+D190,I was looking around a lot and gauging my surroundings and trying to keep my eye on people,0,0,0,1,0,0
+D191,I just tried tuning out the leaf blower noise but it was kind of loud and annoying and he chased us for a while.,0,0,0,1,0,0
+D192,I thought this event was really cool so I wanted to make sure I was looking at as many things as possible. I was just looking around a lot more.,0,0,0,0,0,0
+D193,"Calmed down after the disgusting parts
+",0,0,0,0,1,0
+D194,Moved on fast as I could.,0,0,0,0,0,0
+D195,Tried not to think about getting dismembered.,0,0,0,1,0,0
+D196,Tactically maneuvered myself around it.,0,0,0,0,0,0
+D197,It was over too fast to really do anything to mitigate any strong emotions.,0,0,0,0,0,0
+D198,"Breathing exercise - breathe in for 3, hold 3 , exhale 3",0,0,0,1,0,0
+D199,"Talking to the actor to make things feel normal - I think I anxiously said ""no thanks!!""",0,1,0,0,0,0
+D200,Focus on the exit sign because the strobe effect didn't work over the back-lighting,0,0,0,1,0,0
+D201,Staying as far away from the cage (ducking) as possible,0,0,0,1,0,0
+D202,focused on being physically in the center of the group away from the scene,0,1,0,1,0,1
+D203,Staying as far away from the cage as possible,0,0,0,1,0,0
+D204,Breathing exercise,0,0,0,1,0,0
+D205,I reminded myself that it was still a show.,1,0,0,1,0,1
+D206,I reminded myself that it was still a show.,1,0,0,1,0,1
+D207,"It did feel like the floor might fall out, but I remembered that they would not try to hurt us.",1,0,0,0,1,1
+D208,I was concerned that an actual person was in there and tried to think that another person would not try to hit their head that hard against a window.,1,0,0,0,1,1
+D209,"There was a lot going on in that room, I thought about covering my ears or taking the glasses off and tried to focus on the people in front of me.",0,0,0,1,0,0
+D210,"No, I would say I saw the jump scares coming in the bus and didnt have to adjust much",0,0,0,0,0,0
+D211,Looked away; distraction ,0,0,0,1,0,0
+D212,"I was annoyed that they wanted me to try and dodge the lazer beams, but tried to get more into the moment by reappraising as being more scary?",0,0,0,0,0,0
+D213,look away; distraction ,0,0,0,1,0,0
+D214,I just tried to ignore; distraction,0,0,0,1,0,0
+D215,"I looked partly away and said loudly, ""I knew it"" because I knew they were there but still surprised me. Attempted reappraisal, failure, suppression. ",1,0,0,1,1,1
+D216,"I was annoyed at the person in front of me who would not just go through the thing, so I had to go first and pull her through. Suppression of how annoyed I was at the most. ",0,0,0,1,1,1
+D217,"Reappraisal, distraction",1,0,0,1,0,1
+D218,I tried to keep walking and not look at him so he would stop following me,0,0,0,1,0,0
+D219,Kept walking,0,0,0,0,0,0
+D220,I tried to just keep walking and be alert for one if I saw it ,0,0,0,0,0,0
+D221,thought about something else,0,0,0,1,0,0
+D222,Tried to just go through it and think nothing is going to happen,0,0,0,1,0,0
+D223,I tried to just walk past it and let the noise wash away,0,0,0,0,0,0
+D224,"This part although memorable just didn't feel scary. It just felt like someone yelling at you for no real reason, this part didn't quite connect for me, and I didn't try to regulate",1,0,0,0,0,0
+D225,"I was pretty tense here so I really tried not to minimize it, but did pay more attention to where people were the minimize the emotions",0,0,0,0,0,0
+D226,This was another section where I was really attentive and slightly afraid because again you couldn't see very well to know when someone was sneaking up on you. I again just tried to focus more on the area around me to minimize a lot of fear.,0,0,0,1,0,0
+D227,"I didn't try to regulate the fear, but I did try to regulate the attentiveness, because this is the part of haunted houses that scare people when they think they could actually hurt them, so I was attentive but not really afraid.",0,0,0,0,0,0
+D228,Just thought about how it is all actors nothing will really happen. Still tried to prepare for the jump scares though ,1,0,0,1,0,1
+D229,Thought it would be a good chance for them to turn on the lights and scare us all but they did not,0,0,0,1,0,0
+D230,Accidentally jumped into a guy with a chainsaw so a little jump scare definitely happened. Sort of walked away and said my bad though. Did not want to get my shoes any more wet than they were ,0,0,0,0,0,0
+D231,Breathing and trying really hard to see what was in front of me,0,0,0,0,0,0
+D232,I just tried to not look or interact with them so they wouldn't interact with me,0,0,0,1,0,0
+D233,Just breathing,0,0,0,0,0,0
+D234,I tried deep breathing and telling myself this is all supposed to be for fun and they Legally Cannot touch me.,1,0,0,1,1,1
+D235,I was honestly just impressed by the creativity of that room,1,0,0,0,0,0
+D236,I tried to mitigate fear by not triggering the lasers,0,0,0,0,0,0
+D237,"I didn't appreciate when the actors approached us from behind. But, he mostly kept walking past us.",0,0,0,0,0,0
+D238,I thought about what exactly was supposed to be happening here. ,1,0,0,1,0,1
+D239,I just kept walking to get away from that man.,0,0,0,0,0,0
+D240,"Like the last guy, I just tried to get away from the dentist asap.",0,0,0,0,0,0
+D241,I would occasionally take the 4D glasses off so I could see the attraction for what it really was.,1,1,0,1,0,1
+D242,I tried to expect the unexpected,0,0,0,0,0,0
+D243,"Reminded myself that it wasn't real, compared it to American Horror Story, walked closer to the person in front of me",1,0,0,1,0,1
+D244,I reminded myself of another scary attraction I had been to years ago where a clown followed me. I made it through that so I could make it through this,0,0,0,1,0,0
+D245,I looked ahead of me to see what was coming,0,0,0,1,0,0
+D246,I told myself it wasn't real and stuck close to the person in front of me,1,1,0,0,0,1
+D247,I looked around at all of the possible places the people could be hiding - I looked under the fog since I figured they would try to hide under that,0,0,0,0,0,0
+D248,I tried to expect that people would be blending in with the wall ,0,0,0,0,0,0
+D249,I reminded myself that I had been through that part two years ago when I went to Terror Behind the Walls and it was fine,0,0,0,1,0,0
+D250,I tried to actually avoid the lasers as if that would do anything.,0,0,0,0,0,0
+D251,I just tore through it. A little too heavy metal for me.,0,0,1,0,0,0
+D252,I made a little joke but the actor didn't laugh.,0,1,0,0,0,0
+D253,I wasn't sure if he was actually yelling at me or just in character yelling at me so I tried to play it cool either way.,1,0,0,0,1,1
+D254,Mostly by walking past and laughing at myself,0,1,0,0,0,0
+D255,looking straight ahead until something else popped out,0,0,0,1,0,0
+D256,I thought this moment was funny and focused more on it,0,0,0,0,0,0
+D257,laughing to myself afterward,0,0,0,0,0,0
+D258,looking and realizing who grabbed my shirt at the time.  Then realized it was nothing to worry over.,0,0,0,0,1,0
+D259,I focused on breathing and my surroundings,0,0,0,1,0,0
+D260,focusing on the 4d effect in other areas,0,0,0,0,0,0
+D261,"took deep breaths, laughed, and tried to relax muscles ",0,1,0,1,1,1
+D262,I tried to keep the nervous and shocked feeling ,0,0,0,0,0,0
+D263,"I just tried to think past it, know I was getting through. I didn't like being squeezed through that stuff. ",0,0,0,1,0,0
+D264,Sought social support. ,0,1,0,0,0,0
+D265,"Smile at the actors, walk fast. ",0,0,0,0,0,0
+D266,I took off the 3D glasses.,0,1,0,0,0,0
+D267,"I looked away, I didn't want to get too freaked out. ",0,0,0,1,0,0
+D268,"I think I wanted to be brave, like show off how cool I am to the rest of the group",0,0,0,0,0,0
+D269,I was careful to go around the red lines when the person in charge of the hallway was looking.,0,0,0,0,0,0
+D270,"That area wasn't so scary, I think I was going back and forth between staring at spots where I think I would get scared, but also looking away at times. ",0,0,0,1,0,0
+D271,"Again, just having fun with it. ",0,0,0,0,1,0
+D272,I was cracking jokes to make it easier going through. ,0,1,0,0,0,0
+D273,"I feel like I was looking more into shadows, sort of edging someone on, but also, if I had to admit, a little careful to not look too closely at someone scary or a dark corner. ",0,0,0,1,0,0
+D274,"Was just thinking of what I could do to not be bored. Couldn't think of too many ideas. (Also, I'm sorry to the research that this happened too, I'm just being honest, not trying to be mean, totally glad I got to take this trip, thanks again.) ",0,0,0,1,0,0
+D275,Just thought it was a funny moment. ,0,0,0,0,0,0
