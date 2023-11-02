@@ -152,7 +152,11 @@ t.test(x=df.og.pl$ERQ_Supp.OG, y = df.fu.pl$ERQ_Supp.FU,alternative = "two.sided
 Lastly, we'll compare uncertainty intolerance, since it's demonstrated a consistent association to regulation strategy choice.
 
 ```{r Comparing IUS}
+<<<<<<< Updated upstream
 t.test(x=df.og.pl$IUS.OG, y = df.fu.pl$IUS.FU,alternative = "two.sided",paired = F,var.equal = F)
+=======
+t.test(x=df.og.pl$IUS_F2.OG, y = df.fu.pl$IUS.FU,alternative = "two.sided",paired = F,var.equal = F)
+>>>>>>> Stashed changes
 ```
 
 The two samples do not differ significantly by ERQ Reappraisal scores (xexp = 29.9 xfor= 31.0, 95% CI = [-3.22, 1.03] t(45) = -1, p = 0.3) or IUS scores (xexp = 33.6 xfor= 34.3, 95% CI= [-7.07, 5.59], t(35) = -0.2, p = 0.8) . However, significant differences were observed between the two groups for the expressive suppression ERQ subscale (xexp = 12.5, xfor = 15.7, t(48) = -3, p < 0.001). Neither scale was associated with strategy usage in the Pilot.  

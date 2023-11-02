@@ -476,17 +476,30 @@ plot <- ggplot(data = df, aes(x = Emo.Extent.pc.z, y = fit)) +
                             method = "lm", 
                             alpha = .00, 
                             size = .5) +
-                stat_smooth(method="lm", se = T, alpha = .6, size = 4.5, color = "Black") +
-                scale_x_continuous(breaks = seq(-3,3,1)) +
-                scale_y_continuous(breaks = seq(-2,2,1)) +
-                labs(x = "Emotion Intensity (Person-Centered, z)", 
-                     y ="Regulation Effort (z)") +
-                coord_cartesian(xlim=c(-2.5, 1.5), ylim=c(-2, 2)) +    
+                stat_smooth(method="lm", se = T, alpha = .6, size = 2.5) +
+                labs(title = "Affective Intensity Predicts Regulation Effort",
+                     subtitle = "B = 0.312 ; p < 0.001",
+                     x = paste0("Affective Intensity (z)\n(", 
+                                "mean = ",
+                                round(mean(df$Emo.Extent, na.rm = T),1),
+                                "; sd = ",
+                                round(sd(df$Emo.Extent, na.rm = T),1),
+                                " )"), 
+                     y = paste0("Regulation Effort (z)\n(", 
+                                "mean = ",
+                                round(mean(df$Reg.Extent, na.rm = T),1),
+                                "; sd = ",
+                                round(sd(df$Reg.Extent, na.rm = T),1),
+                                " )")) +
+                coord_cartesian(xlim=c(-2.5,2.5), ylim=c(-2, 2)) +
                 theme_classic() +
-                theme(legend.position = "none") +
-                theme(axis.title = element_text(size = 32)) +
-                theme(axis.text.x = element_text(size = 36, color = "Black")) +
-                theme(axis.text.y = element_text(size = 36, color = "Black")) 
+                theme(legend.position="none") +
+                theme(plot.title = element_text(face="bold", size=13, hjust = 0.5)) +
+                theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
+                theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+                theme(axis.title = element_text(size = 16)) +
+                theme(axis.text.x = element_text(size = 14, color = "Black")) +
+                theme(axis.text.y = element_text(size = 14, color = "Black")) 
 plot
 ```
 
