@@ -236,9 +236,11 @@ We measured cognitive load as the difference in RAT score between immediately af
 summary(lm(PropDist ~ CogLoad_Post, data = df_pl))
 summary(lm(Intense.pmean.z ~ CogLoad_Post, data = df_pl))
 summary(lm(PropDist ~ Intense.pmean.z + CogLoad_Post, data = df_pl))
+summary(lm(PropDist ~ Intense.pmean.z * CogLoad_Post, data = df_pl))
 summary(lm(PropDist ~ CogLoad_Pre, data = df_pl))
 summary(lm(Intense.pmean.z ~ CogLoad_Pre, data = df_pl))
 summary(lm(PropDist ~ Intense.pmean.z + CogLoad_Pre, data = df_pl))
+summary(lm(PropDist ~ Intense.pmean.z * CogLoad_Pre, data = df_pl))
 ```
 
 We fail to find a model with predictive value in this relationship as well.
