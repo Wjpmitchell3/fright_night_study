@@ -694,7 +694,7 @@ Now we're going to narrow this further by specifically looking at reappraisal an
 df <- subset(df_sub, 
              !is.na(df_sub$Distracted) &
              df_sub$Valence < 0.5,
-             select = c("Distracted", "Distracted_cat", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess.z"))
+             select = c("Distracted", "Distracted_cat", "PID", "Intense", "EmoMod","Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess.z"))
 ```
 
 ```{r Printing Details}

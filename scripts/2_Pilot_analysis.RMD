@@ -256,6 +256,26 @@ Coercing the data that is misstructured to the correct structure
   df$Regulated <- as.factor(df$Regulated)
 ```
 
+```{r Creating a person-level dataframe}
+# This association was tested post-hoc in response to a request for a presentation on this study. It was not pre-registered, but I think is nonetheless valuable. 
+df_pl <- df %>%
+         subset(!is.na(.$Reg.Extent),
+                select = c("PID", "STAI_State", "Reg.Extent", "Event.ID")) %>%
+         group_by(PID) %>%
+         summarise(STAI_State = mean(STAI_State, na.rm = TRUE),
+                   Avg_Reg_Extent = mean(Reg.Extent, na.rm = TRUE)
+         )
+
+df_pl$STAI_State_z <- scale(df_pl$STAI_State) %>%
+                    as.numeric()
+df_pl$Avg_Reg_Extent_z <- scale(df_pl$Avg_Reg_Extent) %>%
+                    as.numeric()
+         
+m1 <- lm(Avg_Reg_Extent_z ~ STAI_State_z, data = df_pl,)
+summary(m1)
+confint(m1, level = 0.95)
+```
+
 ## Calculating Quality Assurance Values and Exploring the Dataset
 
 We now want to subset events that were not regulated, that did not have negative emotions, that were regulated with only reappraisal or distraction. We'll get some output as to the stats of this dataset as well.
@@ -400,8 +420,7 @@ I generally subscribe to the information criterion approach, so I'm going to ass
 An ICC of 0.346 is pretty substantial. There's not lower or upper thresholds by which to assess the fittedness of ICC, but this is telling me that individual differences attributable to the PID variable are explaining a pretty big chunk of the variance (ICC = 0.0 would suggest no variance is explained and ICC = 1.0 would suggest all the variance is explained), so it's great we're using an HLM approach. 
 
 Now we'll iteratively construct our models. This is a little tricky because you should only add one variable at a time and test it against the previous iteration, stopping when you fail to find an improvement. However, if we're taking a person-centered approach, as I think it appropriate based on the high ICC value, we divide the emotional extent variable into two components: 1) a person's average intensity, and 2) their person-centered intensity. These together add up to what Emo.Extent would be if it wasn't person-centered anyway, so I don't think we're unduly influencing the amount of variance they explain (thus limiting their influence upon artificially deflating their AIC and BIC scores). All that is to say, I think this approach, comparing m1 to our null, is okay. Also note, I totally violate that approach with m2 by adding all of the covariates. Frankly, this is not a crucial analysis, so I was really just interested to see whether this relationship manages to hold up at all, even in the most conservative of circumstances. 
-
-```{r Experimental Models}
+fasdfasdf```{r Experimental Models}
   m1 <- lmer(Reg.Extent.z ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + (1 | PID), data = df, REML = F)  
   m2 <- lmer(Reg.Extent.z ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + Age + Gender + BDI + 
              IUS_Factor2 + STAI_State + STAI_Trait + (1 | PID), data = df, REML = F)
