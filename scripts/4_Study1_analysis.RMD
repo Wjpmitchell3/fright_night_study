@@ -1034,3 +1034,34 @@ exp(fixef(mcov))
 exp(-0.261)
 exp(0.824)
 ```
+
+```{r}
+# Install the multcomp package if you haven't already
+install.packages("multcomp")
+library(multcomp)
+
+df_motive <- df_pl[,c(1,3:9)] %>%
+  pivot_longer(cols = starts_with("Motive"),values_to = "Value",names_to = "Motives")
+
+df_motive$Motives <- as.factor(df_motive$Motives)
+
+aov <- aov(Value ~ Motives, data = df_motive)
+summary(aov)
+
+# Define contrasts (here's an example for three groups)
+contrasts <- matrix(c(-1, 0, 0, 0, 0, 0, 1,  # contrast 1: group 1 vs. groups 2 & 3
+                    0, -1, 0, 0, 0, 0, 1,
+                    0, 0, -1, 0, 0, 0, 1,
+                    0, 0, 0, -1, 0, 0, 1,
+                    0, 0, 0, 0, -1, 0, 1,
+                    0, 0, 0, 0, 0, -1, 1,
+                    -1, -1, -1, -1, -1, -1, 6), # contrast 2: group 2 vs group 3
+                    byrow = TRUE, nrow = 7)
+
+# Apply the contrasts using glht
+comparison <- glht(aov, linfct = mcp(Motives = contrasts))
+
+# Adjust p-values using Bonferroni method and display the results
+summary(comparison, test = adjusted("bonferroni"))
+
+```
