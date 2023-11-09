@@ -234,6 +234,7 @@ We measured cognitive load as the difference in RAT score between immediately af
 
 ```{r Models Using Cognitive Load}
 summary(lm(PropDist ~ CogLoad_Post, data = df_pl))
+confint(lm(PropDist ~ CogLoad_Post, data = df_pl))
 summary(lm(Intense.pmean.z ~ CogLoad_Post, data = df_pl))
 summary(lm(PropDist ~ Intense.pmean.z + CogLoad_Post, data = df_pl))
 summary(lm(PropDist ~ Intense.pmean.z * CogLoad_Post, data = df_pl))
@@ -255,6 +256,7 @@ We would expect that the expectation that participants enter the haunted house w
 
 ```{r Expectation Models}
 summary(lm(PropDist ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl))
+confint(lm(PropDist ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl))
 summary(lm(Intense.pmean.z ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl))
 ```
 
@@ -276,6 +278,7 @@ for (i in grep(names(df_pl), pattern = "Motive")){
 
 }
 model1 <- lm(PropDist ~ Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored, data = df_pl)
+confint(model1)
 summary(model1)
 model2 <- lm(Intense.pmean.z ~ Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored, data = df_pl)
 summary(model2)
@@ -310,6 +313,7 @@ We aren't really finding anything significant in the main effects models, a litt
 
 ```{r Attitudes Towards Haunted Houses and Fear Models}
 summary(lm(PropDist ~ HH.Enjoy + Fear.Enjoy + Fear.During, data = df_pl))
+confint(lm(PropDist ~ HH.Enjoy + Fear.Enjoy + Fear.During, data = df_pl))
 summary(lm(Intense.pmean.z ~ HH.Enjoy + Fear.Enjoy + Fear.During, data = df_pl))
 ```
 
@@ -337,6 +341,7 @@ We are actually seeing a slightly negative effect between being male and have a 
 ```{r Follow Up Demographics Model}
 model1 <- lm(PropDist ~ Age + Sex, data = df_pl)
 summary(model1)
+confint(model1)
 model2 <- lm(Intense.pmean.z ~ Age + Sex, data = df_pl)
 summary(model2)
 ```
