@@ -694,7 +694,7 @@ Now we're going to narrow this further by specifically looking at reappraisal an
 df <- subset(df_sub, 
              !is.na(df_sub$Distracted) &
              df_sub$Valence < 0.5,
-             select = c("Distracted", "Distracted_cat", "PID", "Intense", "EmoMod","Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess.z"))
+             select = c("Distracted", "Distracted_cat", "PID", "Intense", "EmoMod", "Intense","Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess.z"))
 ```
 
 ```{r Printing Details}
@@ -709,7 +709,7 @@ paste("Number of Engagement cases:", length(which(df$Distracted == 0)))
 
 ```{r Affective Intensity Models}
 m0 <- glmer(Distracted ~ 1 + (1 | PID), data = df, family = binomial)
-m1 <- glmer(Distracted  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Distracted  ~ Intense + (1 | PID), data = df, family = binomial)
 m2 <- glmer(Distracted  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
 mcov <- glmer(Distracted  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
 ```
@@ -750,24 +750,21 @@ exp(0.689)
 
 
 ```{r Visualizing Affective Models}
-m1.e <- effect("Intense.z",m1,xlevels=list(Intense.z=seq(range(df$Intense.z)[1],
-                                                       range(df$Intense.z)[2],
+m1.e <- effect("Intense",m1,xlevels=list(Intense=seq(range(df$Intense)[1],
+                                                       range(df$Intense)[2],
                                                        0.01))) 
 m1.e <-as.data.frame(m1.e)
 head(m1.e)
-plot <- ggplot(m1.e, aes(x=Intense.z, y=fit)) +
-  geom_jitter(data = df, aes(x=Intense.z, y=Distracted, 
+plot <- ggplot(m1.e, aes(x=Intense, y=fit)) +
+  geom_jitter(data = df, aes(x=Intense, y=Distracted, 
                              color = as.factor(Distracted)), 
               width = 0.15, height = 0.025, size = 3.5) +
   geom_line(color = "Black", size = 4.5) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
-  scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df$Intense.z)[1],
-                                                         range(df$Intense.z)[2], 
-                                                         (range(df$Intense.z)[2] - range(df$Intense.z)[1])/6),0)) +
+  scale_x_continuous("Emotion Intensity") +
   scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
   scale_color_manual(values = c("#00BFC4", "#F8766D")) +
-  coord_cartesian(xlim = c(range(df$Intense.z)[1],
-                           range(df$Intense.z)[2]), ylim = c(0,1)) +
+  coord_cartesian(xlim = c(0, 4), ylim = c(0,1)) +
   theme_classic() +  
   theme(legend.position = "none") +
   theme(axis.title = element_text(size = 32, color = "Black")) +
@@ -777,7 +774,7 @@ plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff(paste0(Plots, "Fig2.tiff"),       
+  tiff(paste0(Plots, "Fig3.tiff"),       
        res = 300,
        units = "in",
        width = 12, 
