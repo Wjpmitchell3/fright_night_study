@@ -1,0 +1,755 @@
+---
+title: "ER Forecast v. Usage - Study 3 Analysis"
+author: "W.J. Mitchell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+NAVIGATION / QUESTIONS: 
++ Studies 01 and 02 found a different pattern of results for experiencers and forecasts, but there were many differences between the studies. Study 03 is attempting to put them on the same plane and see what differences emerge. We were unable to use an immersive, dynamic setting like in Study 01, but we at least use dynamic, multimodal stimuli - horror videos. By manipulating condition and intensity, we can explore differences in how participants regulate and plan to regulate in response to varying intensity stimuli.
+
+NOTES:
+
+# ----- SETUP -----
+```{r Loading packages}
+if (require("pacman") == FALSE){
+  install.packages("pacman")
+}
+
+pacman::p_load(DHARMa, 
+               effects, 
+               here, 
+               interactions, 
+               lme4, 
+               lmerTest, 
+               multcomp, 
+               performance,
+               sjPlot,
+               skimr,
+               stargazer, 
+               tidyverse)
+```
+
+Indicating how I want numbers presented and formatted
+
+``` {r Number Formatting}
+  options(scipen=100)
+  options(digits=3)
+  options(tinytex.verbose = TRUE)
+```
+  
+The `here()` function should ideally Tidentify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
+```{r Setting Working Directories}
+  # Identifying our main directory
+  WorkDir <- here::here()
+
+  # Identifying specific directories to read and write from
+  Import <- paste0(WorkDir, "/Data/Study_03/Source/")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables")
+  
+  # Loading Custom Functions
+  source(paste0(WorkDir, "/Analyses/Study_03/func_pavlovia_cleaner.R"))
+```
+
+# ----- LOADING IN DATA -----
+
+We're starting off my saving all file names above 20000 bytes (which is the rough cutoff for having completed enough of the study to be valid) to an array ...
+```{r Specifying Data Source}
+files <- list.files(Import,
+                    full.names = T) %>%
+         .[file.size(.) > 20000]
+```
+
+...and now we'll load all of that data into a singular dataframe using our custom data cleaner function.  
+```{r Loading Data, warning = F}
+## Iterating Through Each File in the Source}
+for (FILE in 1:length(files)){
+  
+  ## If this is the first file we're reading ...
+  if (FILE == 1){
+    
+    ## ... Define it as df
+    df <- pavlovia_cleaner(files[FILE])
+    
+  }
+  
+  ## If this is a later file we're reading ...
+  if (FILE > 1){
+    
+    ## ... Process it ...
+    df_ <- pavlovia_cleaner(files[FILE])
+    
+    ## ... and then append it to df. 
+    df <- bind_rows(df,
+                    df_)
+  }
+  
+  ## If this is the last iteration ...
+  if (FILE == length(files)){
+    
+    ## Clean Our Space
+    rm(pavlovia_cleaner, FILE, files, df_)
+  }
+}
+```
+
+# ----- TIME -----
+
+I'm starting off by calculating how long each participant took to complete their session
+```{r Assessing Time}
+# Creating an Empty Column For Time
+df$Time_Taken <- NA
+
+# Iterating through each row and calculating time taken
+for (ROW in 1:nrow(df)){
+  
+  # If Time in ROW is NA, skip
+  if (!is.na(df$Start_Time[ROW])){
+    
+    # Convert time to a difftime object
+    df$Time_Taken[ROW] <- strptime(df$End_Time[ROW], format = "%H:%M:%S") - strptime(df$Start_Time[ROW], format = "%H:%M:%S") %>%
+                          as.numeric(units = "secs")
+    
+    # If the value is negative (indicating that their participation took place across days (i.e., midnight))
+    if (df$Time_Taken[ROW] < 0 & !is.na(df$Time_Taken[ROW])){
+      
+      # Add the number of seconds in a day to get the true time it took. 
+      df$Time_Taken[ROW] <- df$Time_Taken[ROW] + 86400
+    }
+  }
+}
+
+```
+
+# ----- FILTERING DATA -----
+
+Now we're filtering out non-completers, folks familiar with videos, and folks who did not complete the attention check correctly.
+```{r Filtering Data}
+## If people failed the attention check, get rid of them
+df <- df[df$Attention_Check == 4,]
+
+## If people are familiar with the stimuli, get rid of that stimulus
+for (PID in unique(df$PID)){
+  if (any(!is.na(df$Familiar_specific[df$PID == PID]))){
+    array <- df$Familiar_specific[df$PID == PID & !is.na(df$PID)][1] %>%
+             strsplit(" ") %>%
+             as.data.frame() %>%
+             .[,1]
+    for (VID in 1:length(array)){
+      df <- df[-which(df$PID == PID & !is.na(df$PID) & df$Stimulus == array[VID]),] 
+    }
+  }
+}
+```
+
+# ----- ADDING VARIABLE -----
+
+Specifying which videos are considered low and high intensity
+```{r Adding categories for stimulus levels}
+df$StimInt <- NA
+df$StimInt[df$Stimulus == "ARF1665" | df$Stimulus == "HIU8424"] <- "High"
+df$StimInt[df$Stimulus == "CNL1892" | df$Stimulus == "FGV3524"] <- "Low"
+```
+
+Creating a binarized variable for regulation
+```{r Binarizing Regulation}
+df$Regulated <- NA
+df$Regulated[df$Choice == "Distraction" | df$Choice == "Reappraisal"] <- 1
+df$Regulated[df$Choice == "Neither"] <- 0
+```
+
+Creating a binarized variables for regulation choice
+```{r Binarizing Choice}
+df$Distracted <- NA
+df$Distracted[df$Choice == "Distraction"] <- 1
+df$Distracted[df$Choice == "Reappraisal"] <- 0
+```
+
+Adding a "Missing" value for the few participants who managed to forget or not share their ID
+```{r If PID is missing add "Missing"}
+df$PID[is.na(df$PID)] <- "Missing"
+```
+
+# ----- REFORMATTING VARIABLES -----
+
+Restructuing our releveant variables to be useful
+```{r Restructuing variables as numeric or factors}
+# Numerics
+df$IntAfter <- as.numeric(df$IntAfter)
+df$IntBefore <- as.numeric(df$IntBefore)
+df$IntReduce <- as.numeric(df$IntReduce)
+df$Age <- as.numeric(df$Age)
+
+# Standardizing Numerics
+df$IntBefore_z <- as.numeric(scale(df$IntBefore))
+df$IntAfter_z <- as.numeric(scale(df$IntAfter))
+df$IntReduce_z <- as.numeric(scale(df$IntReduce))
+
+# Factors
+df$Condition <- as.factor(df$Condition)
+df$Date <- as.factor(df$Date)
+df$Distracted <- as.factor(df$Distracted)
+```
+
+Creating a person-level dataframe for analyses that exist above the observation level
+```{r Creating a person-level dataframe}
+df_pl <- df %>%
+         subset(select = c("PID", "Condition", "ERQ_Supp", "ERQ_Reapp", "DERS", "DERS_Nonaccept", 
+                           "DERS_Goals", "DERS_Impulse", "DERS_Awareness", "DERS_Strategies", 
+                           "DERS_Clarity", "IUS", "IUS_F1", "IUS_F2", "Horror_Enjoy", "Age",
+                           "Gender_Identity", "Sex", "Race", "Marital_Status", "Edu_Num", "Edu_Cat")) %>%
+        distinct()
+```
+
+# ----- QA Checks -----
+
+## ---- High v. Low Intensity ----
+The videos we've labeled as high intensity should have a higher rating by participants than what we've labeled as low-intensity
+```{r High v. Low Intensity T-Test}
+(t_test_result <- t.test(x = df$IntAfter[df$StimInt == "High"],
+                        y = df$IntAfter[df$StimInt == "Low"]))
+```
+
+RESULTS: High intensity videos (x = 53.5) were significantly more intense than low intensity videos (x = 40.6) (t = 6.62, df = 948, p < 0.001)
+
+```{r Create a data frame with t-test results}
+results <- data.frame(
+  Group = c("High", "Low"),
+  rating = t_test_result$estimate,
+  t_value = t_test_result$statistic,
+  p_value = t_test_result$p.value
+)
+
+# Define the plot
+ggplot(results, aes(x = Group, y = rating, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+  geom_text(aes(label = sprintf("Rating = %.2f", rating), y = rating), vjust = -0.5, size = 4) +
+  labs(title = "Rating versus Category", y = "Rating") +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0,100,20)) +
+  theme_minimal()
+```
+
+## ---- Forecaster v. Experiencer Intensity ----
+
+The conditions should demonstrate no differences in affective intensity
+```{r}
+(t_test_result <- t.test(x = df$IntBefore[df$Condition == "Experience"],
+                        y = df$IntBefore[df$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 26.2) did not report significantly greater intensity than forecasters (x = 28.8) before the videos started (t = -1.50, df = 908, p = 0.134)
+
+```{r}
+(t_test_result <- t.test(x = df$IntAfter[df$Condition == "Experience"],
+                        y = df$IntAfter[df$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 46.5) did not report significantly greater intensity than forecasters (x = 48.0) after the videos ended (t = -0.738, df = 918, p = 0.460)
+
+## ---- Regulated v. Unregulated Intensity ----
+
+Regulated videos should be of a greater intensity than not regulated videos
+```{r}
+(t_test_result <- t.test(x = df$IntAfter[df$Regulated == 1],
+                         y = df$IntAfter[df$Regulated == 0]))
+```
+
+RESULTS: Regulated videos (x = 53.3) were significantly more intense than unregulated videos (x = 36.7) (t = 8.30, df = 736, p < 0.001)
+
+```{r Create a data frame with t-test results}
+results <- data.frame(
+  Group = c("Regulated", "Unregulated"),
+  rating = t_test_result$estimate,
+  t_value = t_test_result$statistic,
+  p_value = t_test_result$p.value
+)
+
+# Define the plot
+ggplot(results, aes(x = Group, y = rating, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+  geom_text(aes(label = sprintf("Rating = %.2f", rating), y = rating), vjust = -0.5, size = 4) +
+  labs(title = "Rating versus Regulation", y = "Rating") +
+  scale_y_continuous(limits = c(0,100), breaks = seq(0,100,20)) +
+  theme_minimal()
+```
+
+## ---- Forecast v. Experiencer Individual Difference Measures ----
+
+We ideally don't want these two groups differing any anyway across all of these metrics.
+
+```{r Forecasters v. Experiencers on ERQ Reappraisal}
+(t_test_result <- t.test(x = df_pl$ERQ_Reapp[df_pl$Condition == "Experience"],
+                        y = df_pl$ERQ_Reapp[df_pl$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 24.5) did not report significantly greater reappraisal tendencies than forecasters (x = 24.4) (t = 0.10, df = 199, p = 0.9)
+
+```{r Forecasters v. Experiencers on ERQ Suppression}
+(t_test_result <- t.test(x = df_pl$ERQ_Supp[df_pl$Condition == "Experience"],
+                        y = df_pl$ERQ_Supp[df_pl$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 10.8) did not report significantly greater suppression tendencies than forecasters (x = 12.1) (t = -1.94, df = 223, p = 0.0542)
+
+```{r Forecasters v. Experiencers on IUS_Factor 1}
+(t_test_result <- t.test(x = df_pl$IUS_F1[df_pl$Condition == "Experience"],
+                        y = df_pl$IUS_F1[df_pl$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 14.4) did not report significantly greater IUS_F1 than forecasters (x = 15.1) (t = -0.9, df = 235, p = 0.3)
+
+```{r Forecasters v. Experiencers on IUS Factor 2}
+(t_test_result <- t.test(x = df_pl$IUS_F2[df_pl$Condition == "Experience"],
+                        y = df_pl$IUS_F2[df_pl$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 7.26) did not report significantly greater IUS_F2 than forecasters (x = 7.92) (t = -1, df = 220, p = 0.3)
+
+```{r Forecasters v. Experiencers on Age}
+(t_test_result <- t.test(x = as.numeric(df_pl$Age[df_pl$Condition == "Experience"]),
+                         y = as.numeric(df_pl$Age[df_pl$Condition == "Forecast"])))
+```
+
+RESULTS: Experiencers (x = 38.6) did not report significantly greater age than forecasters (x = 38.8) (t = -0.1, df = 220, p = 0.9)
+
+```{r Forecasters v. Experiencers on DERS}
+(t_test_result <- t.test(x = df_pl$DERS_Strategies[df_pl$Condition == "Experience"],
+                         y = df_pl$DERS_Strategies[df_pl$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 12.1) did not report significantly greater DERS strategy subscale than forecasters (x = 12.0) (t = 0.08, df = 221, p = 0.9)
+
+```{r Forecasters v. Experiencers on Horror Enjoyment}
+(t_test_result <- t.test(x = df_pl$Horror_Enjoy[df_pl$Condition == "Experience"],
+                         y = df_pl$Horror_Enjoy[df_pl$Condition == "Forecast"]))
+```
+
+RESULTS: Experiencers (x = 2.99) did not report significantly greater horror enjoyment than forecasters (x = 2.95) (t = 0.1, df = 226, p = 0.9)
+
+# ----- PRE-ANALYSIS ASSUMPTIONS -----
+
+```{r Histograms}
+hist(df$IntBefore, breaks = seq(0,100,10))
+hist(df$IntAfter, breaks = seq(0,100,10))
+```
+
+```{r Descriptives for Person-Level}
+skim(df_pl)
+```
+
+```{r Descriptives for Everything Else}
+skim(df[,which(!(names(df) %in% names(df_pl)))])
+```
+
+# ----- ANALYSIS -----
+ 
+## ---- Intensity Predicting Regulation ----
+Our first analysis is just going to be a simple one: does the intensity of a stimulus predict that it will be regulated. We already kind of ran this in the QA portion, albeit in a more course way with T-Tests.
+```{r Null Model}
+m0 <- glmer(Regulated ~ 1 + (1|PID), 
+          data = df,
+          family = "binomial")
+performance::icc(m0)
+```
+
+We get an error for large eigenvalues, which I beleive is because our model has nothing else but 1 and 0's in it. This should not matter and should not be the case in the next model.
+
+```{r Regulated MEM & Model Comparison}
+m1 <- glmer(Regulated ~ IntAfter_z + (1|PID), 
+          data = df,
+          family = "binomial")
+anova(m0,m1)
+```
+
+We do in fact see that this model is a better fit to the data, and we can take a look to see why next.
+
+```{r Model Summary}
+stargazer(m0, m1,
+          type = "text", 
+          ci = T)
+exp(fixef(m1))
+exp(0.768)
+exp(1.331)
+```
+
+```{r Model Visualization}
+sjPlot::plot_model(m1, type = "pred")
+```
+RESULTS: The association between intensity and regulating at all is significant (OR = 2.86; p < 0.001)
+
+## ---- Regulation by Condition Frequency ----
+
+Next I want to test whether the conditions differ in how often the regulate or do not regulate. As such, I'll start by checking how often people chose any given option
+```{r Regulation Proportions}
+df$Choice %>%
+  table()/nrow(df)
+```
+
+Then I'll create a text variable to make interpretation easier. 
+```{r Describing Variables}
+df$Regulated[df$Regulated == 1] <- "Regulated"
+df$Regulated[df$Regulated == 0] <- "Not Regulated"
+```
+
+```{r Condition by Regulation Chi-Square}
+chisq.test(x = df$Condition[!is.na(df$Regulated) & !is.na(df$Condition)],
+           y = df$Regulated[!is.na(df$Regulated) & !is.na(df$Condition)])
+```
+RESULTS: We do find differences in how often the conditions regulate (x2(1) = 120, p < 0.001)
+
+```{r Visualizing Regulation Chi-Square}
+  plot <- ggplot(data = subset(df, !is.na(df$Regulated) & !is.na(df$Condition)), aes(x = Condition, color = Regulated, fill = Regulated)) +
+        geom_bar() +
+        scale_x_discrete("Condition") +
+        scale_y_continuous(breaks = c(0,150,300,450,600)) +
+        labs(
+             x = NULL,
+             y ="Frequency") +
+        scale_color_brewer() +
+        scale_fill_brewer(palette = "Accent") +
+        coord_cartesian(ylim=c(0.0, 600.0)) +
+        theme_classic() +
+        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+        theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
+        theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+        theme(axis.title = element_text(size = 10)) +
+        theme(axis.text.x = element_text(size = 14, color = "Black")) +
+        theme(axis.text.y = element_text(size = 12, color = "Black")) +
+        theme(legend.key.size = unit(0.5, 'cm')) +
+        theme(legend.title = element_text(size=8)) +
+        theme(legend.text = element_text(size=6))
+
+  plot
+```
+
+```{r Saving Regulation Chi-Square Plot}
+  tiff(paste0(Plots, "Fig7a.tiff"),       
+       res = 300,
+       units = "in",
+       width = 6, 
+       height = 4.5)
+  plot
+  dev.off()
+```
+
+```{r Generating a frequency table specifically for experiencers}
+df$Regulated[df$Condition == "Experience"] %>%
+  table()/length(which(df$Condition == "Experience"))
+```
+
+```{r Generating a frequency table specifically for forecasters}
+df$Regulated[df$Condition == "Forecast"] %>%
+  table()/length(which(df$Condition == "Forecast"))
+```
+
+These results suggest experiencers regulate less often than forecasters predict that they should
+
+## ---- Regulation Strategy by Condition Frequency ----
+
+Great, now let's look at how often people choose specific strategies when they do choose to regulate
+```{r Regulation Strategy by Condition Chi-Square}
+chisq.test(x = df$Condition[df$Choice != "Neither"],
+           y = df$Choice[df$Choice != "Neither"])
+```
+
+RESULTS: The two conditions did use reappraisal and distraction at different frequencies (X2(1) = 6, p = 0.01)
+
+```{r Visualizing Regulation Strategy Chi Square}
+  plot<- ggplot(data = subset(df, df$Choice != "Neither"), aes(x = Condition, color = Choice, fill = Choice)) +
+        geom_bar() +
+        scale_x_discrete("Condition") +
+        scale_y_continuous(breaks = c(0,150,300,450,600)) +
+        labs(
+
+             x = NULL,
+             y ="Frequency") +
+        scale_color_brewer(palette = "Dark2", direction = -1) +
+        scale_fill_brewer(palette = "Set2", direction = -1) +
+        coord_cartesian(ylim=c(0.0, 600.0)) +
+        theme_classic() +
+        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+        theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
+        theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+        theme(axis.title = element_text(size = 10)) +
+        theme(axis.text.x = element_text(size = 14, color = "Black")) +
+        theme(axis.text.y = element_text(size = 12, color = "Black")) +
+        theme(legend.key.size = unit(0.5, 'cm')) +
+        theme(legend.title = element_text(size=8)) +
+        theme(legend.text = element_text(size=6))
+plot
+```
+
+```{r Saving the Regulation Strategy Visualization}
+  tiff(paste0(Plots, "Fig7b.tiff"),       
+       res = 300,
+       units = "in",
+       width = 6, 
+       height = 4.5)
+  plot
+  dev.off()
+```
+
+```{r Generating a frequency table specifically for experiencers}
+df$Distracted[df$Condition == "Experience" & !is.na(df$Distracted)] %>%
+  table()/length(which(df$Condition == "Experience" & !is.na(df$Distracted)))
+```
+
+```{r Generating a frequency table specifically for forecasters}
+df$Distracted[df$Condition == "Forecast" & !is.na(df$Distracted)] %>%
+  table()/length(which(df$Condition == "Forecast" & !is.na(df$Distracted)))
+```
+
+## ---- Primary Analysis (Intensity Predicting Strategy) ----
+
+Now we're testing the model that we preregistered and originally theorized about. We start by constructing our null model
+```{r Primary Null Model}
+m0 <- glmer(Distracted ~ 1 + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+icc(m0)
+```
+
+Now we're iteratively test models by adding in the variables that we think are primarily theoretically relevant
+```{r Primary Experimental Models - 1}
+m1 <- glmer(Distracted ~ IntAfter_z + (1 | PID) + (1 | Stimulus), 
+            data = df,
+            family = "binomial")
+anova(m0,m1)
+```
+
+```{r Primary Experimental Models - 2}
+m2 <- glmer(Distracted ~ IntAfter_z + Condition + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+anova(m1,m2)
+```
+
+```{r Primary Experimental Models - 3}
+m3 <- glmer(Distracted ~ IntAfter_z * Condition + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+anova(m2,m3)
+```
+
+```{r Primary Experimental Models - 4}
+m4 <- glmer(Distracted ~ IntAfter_z * Condition + IntBefore_z + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+anova(m3,m4)
+```
+
+Wow, can't believe we made it this far. Every model has been an improvement and I don't quite know where to go next from here, so let's take a data-driven approach. I correlate all of the possible variables and work in descending order from most to least correlated. 
+
+```{r Testing covariation}
+df$Distracted_num <- as.numeric(df$Distracted)
+df %>%
+  subset(select = c("Distracted_num", "ERQ_Reapp", "ERQ_Supp","DERS_Strategies",
+                     "IUS_F1", "IUS_F2", "Age", "Horror_Enjoy")) %>%
+  cor(method = "spearman", use = "pairwise.complete.obs") %>%
+  .[,1] %>%
+  abs() %>%
+  sort(decreasing = T)
+```
+
+Now we're start with the ERQ reappraisal score
+```{r Adding Covariates}
+m5 <- glmer(Distracted ~ IntAfter_z * Condition + IntBefore_z + ERQ_Reapp + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+anova(m4,m5)
+```
+
+Improvement. Next we'll go with the IUS F2 ...
+```{r Adding Covariates}
+m6 <- glmer(Distracted ~ IntAfter_z * Condition + IntBefore_z + ERQ_Reapp + IUS_F2 + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+anova(m5,m6)
+```
+
+... which was not an improvement. Just for good measure, let's try the next variable.
+```{r Adding Covariates}
+m7 <- glmer(Distracted ~ IntAfter_z * Condition + IntBefore_z + ERQ_Reapp + DERS_Strategies + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+anova(m5,m7)
+```
+
+Also just justifiable. Okay, no worries, Model 5 is our model of best fit. Let's check the summary:
+
+```{r Model Output}
+stargazer(m0,m1,m2,m3,m4,m5,
+          type = "text",
+          ci = T)
+exp(fixef(m5))
+exp(-0.924)
+exp(-0.051)
+```
+
+Great, we have some pretty serious relationship here. Let's see if we have moderation. 
+
+```{r Moderation of our Best Fitting Model}
+sim_slopes(model = m5, pred = IntAfter_z, modx = Condition, confint = T)
+```
+
+I'm not exactly sure that this is reliable for non-linear models so I'm leaving it out. 
+
+Now lastly let's generate a visualizaiton. I'm respecifying the model so that we can have the scale non-standardized at the request of the reviewers
+
+```{r Respecifying Model}
+m5 <- glmer(Distracted ~ IntAfter * Condition + IntBefore_z + ERQ_Reapp + (1 | PID) + (1 | Stimulus), 
+          data = df,
+          family = "binomial")
+```
+
+```{r Setting Visualization Theme}
+set_theme(
+  base = theme_classic(), 
+  axis.title.size = 2, axis.textsize = 1.25, axis.title.color = "Black", axis.textcolor = "Black"
+)
+```
+
+```{r Generating Primary Model Visualization}
+plot <- plot_model(m5, 
+                   type = "int", 
+                   title = "", 
+                   line.size = 2,
+                   axis.title = c("Affective Intensity", 
+                                  "Probability of Distraction"),
+                   show.data = T, 
+                   jitter = 0.025)
+```
+
+```{r Saving Primary Model Visualization}
+  tiff(paste0(Plots, "Fig8.tiff"),       
+       res = 300,
+       units = "in",
+       width = 6, 
+       height = 4.5)
+  plot
+  dev.off()
+```
+
+# ----- ASSUMPTION CHECKS -----
+
+Because our models are mixed effects, we're mostly considered about model residuals. So now we're check the assumptions of our residuals. We'll start just assessing the shape of the residuals which should be roughly S shaped for our categorical variable and roughly linear for affective intensity
+```{r Calculating probabilities from the model, warning=FALSE}
+probabilities <- predict(m5, 
+                         type = "response")
+
+# Bind the logit and tidying the data for plot
+df_assum <- df %>%
+  subset(!is.na(.$Distracted), 
+         select = c("Distracted", "IntAfter_z")) %>%
+  mutate(logit = log(probabilities/(1 - probabilities))) %>%
+  gather(key = "predictors", value = "predictor.value", -logit)
+
+# Examining linearity
+ggplot(df_assum, aes(logit, as.numeric(predictor.value)))+
+  geom_point(size = 0.5, alpha = 0.5) +
+  geom_smooth(method = "loess") + 
+  theme_bw() + 
+  facet_wrap(~predictors, scales = "free_y")
+```
+
+Next we'll use cook's distance to assess leveraging outliers 
+```{r Calculating Cook's Distance}
+# Calculate Cook's distance
+cooksd_values <- cooks.distance(m5)
+# Plotting Cook's Distances
+threshold <- 0.5
+plot(cooksd_values, type = "p", pch = 19, main = "Cook's Distance Plot", xlab = "Observation Index", ylab = "Cook's Distance")
+text(which(cooksd_values > threshold), cooksd_values[cooksd_values > threshold], labels = which(cooksd_values > threshold), pos = 3)
+```
+
+We only found outliers from observation 21, 291, 429, 454, 522, 558. Not terrible
+
+and then we'll use a suite of functions from performance and DHARMa to test models automatically. I really love these and wish I knew about them earlier. 
+```{r Simulated Residuals}
+# Calculating simulated standardized residuals
+residuals_sim <- simulateResiduals(m5, n = 1000)
+
+# Plotting standardized residuals
+plot(residuals_sim)
+test_res <- testResiduals(residuals_sim)
+summary(test_res)
+```
+
+```{r More Tests with Observed Residuals}
+performance::check_model(m5)
+```
+
+Everything looks like uncomfortably solid. Like I don't remember meeting so many assumption thresholds with any other analysis before in my life. God, the joys of controlled, simple research designs. 
+
+# ----- POST TESTS -----
+
+To tidy up, we want to run a few more analyses that dawned on me to run now that we know the results. I had intended to run these at some point (hence why I asked participants these questions), but how I interpret them and how useful they are really are colored, I think, by the analyses I've already ran. 
+
+Do the conditions differ in how much effort they devoted or predicted they would devote to regulating, holding which strategy they were using constant?
+```{r ANOVA model testing effort}
+summary(aov(Effort ~ Distracted + Condition + Error(PID), data = df))
+```
+
+We find a trending relationship by condition. Let's explore a little further
+```{r Effort Contrasts}
+(effort_Dist <- t.test(x = df$Effort[df$Condition == "Experience" & df$Distracted == 1],
+       y = df$Effort[df$Condition == "Forecast" & df$Distracted == 1]))
+(effort_Reapp <- t.test(x = df$Effort[df$Condition == "Experience" & df$Distracted == 0],
+       y = df$Effort[df$Condition == "Forecast" & df$Distracted == 0]))
+
+p.adjust(c(effort_Dist$p.value, effort_Reapp$p.value), method = "bonferroni")
+```
+We find that forecasters think that reappraisal will require less effort than experiencers report. This is pretty interesting, but I don't want to read into it too much.
+
+Do the conditions differ upon how effectively they believe the strategies should be at reducing affective intensity? There should be an interaction with strategy here 
+```{r Creating a regulation strategy factor}
+df$Strategy[df$Choice == "Distraction"] <- "Distraction"
+df$Strategy[df$Choice == "Reappraisal"] <- "Reappraisal"
+df$Strategy <- as.factor(df$Strategy)
+```
+
+```{r Intensity Reduction ANOVA}
+summary(aov(IntReduce ~ Strategy * Condition + Error(PID), data = df))
+```
+We find a lot of statistically significant relationships. Let's run the contrasts
+
+```{r Intensity Reduction Contrasts}
+t.test(x = df$IntReduce[df$Distracted == 0],
+       y = df$IntReduce[df$Distracted == 1])
+
+t.test(x = df$IntReduce[df$Condition == "Experience"],
+       y = df$IntReduce[df$Condition == "Forecast"])
+  
+t.test(x = df$IntReduce[df$Condition == "Experience" & df$Distracted == 1],
+       y = df$IntReduce[df$Condition == "Forecast" & df$Distracted == 1])
+```
+
+```{r Again Setting the Theme}
+set_theme(
+  base = theme_classic(), 
+  axis.title.size = 0.85, axis.textsize =0.951, axis.title.color = "Black", axis.textcolor = "Black"
+)
+```
+
+```{r Generating a visualization}
+plot <- plot_model(lmer(IntReduce ~ Strategy * Condition + (1 |PID), data = df), 
+                  type = "int",
+                  title = "",
+                  axis.title = c("Regulation Strategy", 
+                                 "Reduction in Affective Intensity"), 
+                  axis.lim = c(0,100),
+                  dot.size = 3, 
+                  line.size = 1,
+                  show.legend = F)
+plot
+```
+```{r Saving the intensity reduction visualization}
+  tiff(paste0(Plots, "Fig9_NoLegend.tiff"),       
+       res = 300,
+       units = "in",
+       width = 4, 
+       height = 4)
+  plot
+  dev.off()
+```

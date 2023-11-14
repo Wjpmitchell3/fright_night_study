@@ -1,5 +1,5 @@
 ---
-title: "ER Choice v. Usage - Study 2 Analysis"
+title: "ER Forecast v. Usage - Study 2 Analysis"
 author: "W.J. Mitchell"
 date: "`r Sys.Date()`"
 output:  html_document
