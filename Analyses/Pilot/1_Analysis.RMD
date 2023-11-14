@@ -1,0 +1,905 @@
+---
+title: "ER Choice v. Usage - Pilot Analysis"
+author: "W.J. Mitchell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+NAVIGATION / QUESTIONS:
++ Lab research suggests that there are few stronger predictors of how a person might choose to regulate their emotions than affective intensity. Gal Sheppes and his lab have some really brilliant research on ER Choice that has laid the groundwork for the field. However, many of these studies create a sample that differs significantly from the general population in order to study the phenomena in isolation. Stimuli are dynamic and multimodal, rather than static and unimodal. Emotions evolve over a timecourse rather than in an instant. We often don't get to prepare for how we feel. We also don't have training and instructions on when, why, and how to regulate our emotions. We also aren't often limited to a single regulatory choice. EMA studies certainly get at this, but can sometimes fail to capture significant variation in emotive experiences. As such, choice differs significantly from usage. What we wanted to explore with this data was whether this bears true in the data. In the messiness of the real world, will emotional intensity continue to predict which strategies people use? 
+
+PREDICTIONS:
++ I personally have concerns that that emotional intensity will continue to demonstrate predictive utility towards ER usage (i.e., distraction v. reappraisal) when measured beyond a lab context, but the literature would likely argue, for many reasons, that the relationship should hold. We will adjust for a number of individual difference measures in the process.
+
+ISSUES:
++ None noted
+
+NOTES:
+
+# Setup
+
+NOTE: I really love the `p_load()` function from `pacman`. If a required package isn't installed, it'll install it. If it's not loaded it'll load it. If it's not updated, it'll update it. You just enter what you need and it manages the rest. 
+
+```{r Packages I Use}
+  # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
+  # Loading in my packages with my pacman manager
+  pacman::p_load(effects,
+                 glmmTMB,
+                 here,
+                 influence.ME,
+                 lattice,
+                 lme4, 
+                 performance,
+                 psych,
+                 simr,
+                 sjPlot,
+                 stargazer, 
+                 tidyverse)
+```
+
+``` {r Number Formatting}
+  # Giving some commands for how numbers appear in R
+  options(scipen=100)
+  options(digits=3)
+  options(tinytex.verbose = TRUE)
+```
+
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
+```{r Setting Working Directories}
+  # Identifying our main directory
+  # Identifying our main directory
+  WorkDir <- here::here()
+
+  # Identifying specific directories to read and write from
+  Export <- paste0(WorkDir, "/data/Pilot/Deriv/")
+  Import <- paste0(WorkDir, "/data/Pilot/Raw/")
+  Plots <- paste0(WorkDir, "/plots/")
+```
+
+## Building the Dataframe
+
+We're going to start by loading in our cleaned dataframe
+
+```{r Loading dataframe}
+  # Loading in our cleaned dataset
+  df <- read.csv(file = paste0(Import, "df.csv"), 
+                 header = T, sep=",", 
+                 stringsAsFactors = F,
+                 na.strings=c("","N/A"), 
+                 row.names = 1)
+```
+
+### Removing Excluded Participants
+
+Participant 1339 had reported being at the haunted house the week prior to exposure, so they will also be removed. 1307 and 1308 were removed for concerns regarding english fluency.
+
+```{r Subsetting Participants Beyond Exclusion Criteria}  
+  # Removing participant who violated eligibility standards
+  df <- subset(df,
+               (df$PID != "1339" & 
+                df$PID != "1307" & 
+                df$PID != "1308"))
+```
+
+### General Data Cleaning / Correction
+
+An executive decision prior to collection was that we'd collect fear intensity ratings for all reported events, independent of whether the participant indicated having felt fear in the first place. As a result, I don't feel comfortable using those ratings for analysis, so I am removing any instance of a fear rating that is not paired with an endorsement. 
+
+```{r Removing Intensities Lacking Endorsement}
+  # Removing ratings provided for emotions that were not endorsed.
+  df$Emo.Extent[is.na(df$Presence)] <- NA
+  df$Reg.Extent[is.na(df$Presence)] <- NA
+  df$Reg.Extent[df$Reg.Extent == 1] <- NA
+```  
+
+### Cronbach's Alpha
+Before we do anything, I want to assess the internal consistency of the emotions we are deeming to be negatively valenced. Given that we used a rather heavily modified measure, we need to complete some sort of a quality assurance measure. Face validity isn't quite enough.
+
+```{r Building an Empty Dataframe to Calculate Chronbachs Alpha}
+  # Generating an empty dataframe in a format conducive to completing the cronbach's alpha
+  alpha <- data.frame(PID = sort(rep(unique(df$PID), 10)), 
+                      Event = rep(1:10,47), 
+                      Alert = NA,
+                      Amuse = NA,
+                      Excite = NA,
+                      Aggress = NA,
+                      Annoy = NA,
+                      Upset = NA,
+                      Nerv = NA,
+                      Gross = NA,
+                      Whelm = NA, 
+                      Panic = NA, 
+                      Tense = NA, 
+                      Shock = NA, 
+                      Fear = NA)
+```                      
+                      
+```{r Building the dataframe by which to calculate Chronbachs Alpha}
+# Populating that dataframe with data from the original dataframe
+ 
+for (row in 1:nrow(df)){
+  if (row %% 14 != 0) {
+    if (!is.na(df$Presence[row])) {
+      if (df$Presence[row] == 1) {
+        alpha[ceiling(row/14), (2 + row %% 14)] <- df$Emo.Extent[row]
+      }
+    }
+  }
+}
+```
+
+NOTE: We did not have enough endorsements of feeling anger/aggression to include in the calculation. The alpha function also provides a warning regarding the matrix not being positive definite. This message is produced when feeding `alpha()` a dataframe with missing values [see this stackoverflow post for more details](https://stackoverflow.com/questions/36867565/interpreting-the-psychcor-smoother-function). This is unfortunately as best as I can tell just the nature of our data. Not everyone felt all of the emotions all of the time so there will necessarily be missing data. I tried searching pretty extensively more a more appropriate test, but I couldn't find one. 
+
+```{r Calculating Chronbachs Alpha}
+# Calculating Cronbach's Alpha for the negative emotions 
+psych::alpha(alpha[,7:15], 
+             na.rm = T, 
+             use = "pairwise")
+
+rm(alpha, row)
+```
+
+### Cronbach's Alpha Results
+
+The Cronbach's alpha analysis indicated an internal consistency value of alpha = 0.91 [95% CI: 0.90 - 0.93], suggesting excellent internal consistency within our negatively valenced emotion construct.
+
+### Creating New Variables 
+
+Much to my chagrin, the existing event variable notes the order in which events were recalled, not the chronological order in which the events occurred. Those are captured in the "EventsOrdered" columns. It's confusing to wrap your head around but the number that exists in a cell in those columns represents which event, in recall order, occurred first chronologically. So if df$EventsOrdered[1] read "7", then that would mean that the 7th event that that participant recalled occurred first chronologically. We care about both, so I'm going to create an order column for both.
+
+```{r Creating a variable tracking the order in which events were entered}
+# Creating an empty variable in the dataframe
+df$Event_chronolorder <- NA
+
+# Iterating through each row ...
+for (row in 1:nrow(df)){
+  # and each column of events ...
+  for (col in grep(x = names(df),
+                 pattern = "EventsOrdered\\.*")){
+    # and recording the appropriate index for each event.
+    if (df$Event[row] == df[row,col]){
+      df$Event_chronolorder[row] <- col + 1 - grep(x = names(df),
+                                                   pattern = "EventsOrdered\\.2")
+    }
+  }
+}
+
+rm(row, col)
+```
+
+We are centering the intercept of the events on an extrapolated middle event (5.5). I should explain this because it confused the folks reviewing this script. Although colloquially, half of 10 is 5, that's only the case when we're operating on a number scale that's on Base 0. We had no Event 0; only Event 1. If we want to capture the average event, or in other words, the mean, we need event 5.5. We can pretty simply demonstate that 5.5 is the mean by running `mean(1:10)`. We could also just count on a number line. Event 5 is slightly closer to Event 1 (4 - 3 - 2 - 1) than it is Event 10 (6 - 7 - 8 - 9 - 10). This is a contentious choice because Event 5.5 doesn't really exist; we are extrapolating a datapoint. The contention isn't whether to center on 5 or 5.5: 5 is essentially just a random datapoint if it isn't at true center. We might as well center on 6 or 9 for that matter. Though, I did struggle with whether to center it in the middle or on the first event. My logic is that we likely will see effects of time and I'm more interested in the average, which event 5.5 better represents and which might better represent the data as a whole, than the first event. 
+
+```{r Making the intercept of event the first event}
+  df$Event_recallorder <- as.numeric(df$Event - 4.5)
+  df$Event_chronolorder <- as.numeric(df$Event_chronolorder - 3.5)
+```
+
+Reordering and subsetting the variables that we care about.
+
+```{r Subsetting Relevant Data}
+  df <- subset(df,
+               !is.na(df$Emo.Extent),
+               select = names(df)[c(1:2, 202:203, 6:11, 14, 16, 34:35, 38, 46,
+                                    136:143, 162:166, 168:172, 187:196)])
+```
+
+Emotions and their regulation can be an extremely personal and idiosyncratic experience. As such, we expect that Person A's regulation might look different than Person B's and using person-centered multilevel models might better capture that. 
+
+```{r Person Centering and Aggregating}   
+df <- dplyr::group_by(df, as.factor(PID))
+df <- dplyr::mutate(df, 
+                 Emo.Extent.pmean = mean(Emo.Extent, na.rm=T),
+                 Reg.Extent.pmean = mean(Reg.Extent, na.rm=T),
+                 Emo.Extent.pc = Emo.Extent - mean(Emo.Extent, na.rm=T),
+                 Reg.Extent.pc = Reg.Extent - mean(Reg.Extent, na.rm=T))
+df <- ungroup(df)
+```
+
+Lastly, we're standardizing our variables so as to make them translatable and communicable.
+
+```{r Z Scoring Aggregates}   
+df <- group_by(df, PID)
+df$Emo.Extent.pmean.z <- as.numeric(scale(df$Emo.Extent.pmean, scale = T, center = T))
+df$Reg.Extent.pmean.z <- as.numeric(scale(df$Reg.Extent.pmean, scale = T, center = T))
+df <- ungroup(df)
+```
+
+```{r Z Scoring Variables}
+  df$Emo.Extent.z <- as.numeric(scale(df$Emo.Extent, scale=T, center=T))
+  df$Reg.Extent.z <- as.numeric(scale(df$Reg.Extent, scale=T, center=T))
+  df$Emo.Extent.pc.z <- as.numeric(scale(df$Emo.Extent.pc, scale=T, center=T))
+  df$Reg.Extent.pc.z <- as.numeric(scale(df$Reg.Extent.pc, scale=T, center=T))
+```
+
+### Assessing the structure of our dataframe
+
+Assessing whether the variables we want to use are structured correctly
+
+```{r Structure of the dataframe}
+  str(df)
+```
+
+Coercing the data that is misstructured to the correct structure
+
+```{r Restructuing Variables}
+# Coercing the easy variables
+  df$Emotion <- as.factor(df$Emotion)
+  df$Valence <- as.factor(df$Valence)
+  df$PID <- as.factor(df$PID)
+  
+# Now coercing the haunted house variables is hard because for some stupid reason, these were free response, so there's a lot of variance
+# When people give a range, we're going to take the average of that range. When left blank, it populated a period, so we'll replace those 
+# with NA. When not enough information is present, we will also use NA. Also, excel automatically converted "#-#" entries to months, so we'll
+# fix those as well (e.g., 3-5 becomes "5-March")
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "."] <- NA
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "3-Feb"] <- 2.5
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "4-5 times"] <- 4.5
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "5-Mar"] <- 4
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "2 or 3 (ten + years ago)"] <- 2.5
+  df$HauntedHouse_Times[df$HauntedHouse_Times == "Once every couple of years"] <- NA
+  df$HauntedHouse_Compare[df$HauntedHouse_Compare == "."] <- NA
+  
+# Now we'll coerce the other ones. 
+  df$HauntedHouse_Times <- as.numeric(df$HauntedHouse_Times)
+  df$HauntedHouse_Compare <- as.numeric(df$HauntedHouse_Compare)
+```
+
+```{r Adding Regulated Factor}  
+  df$Regulated <- NA
+  df$Regulated[df$Reg.Extent > 1] <- "Regulated"
+  df$Regulated[df$Reg.Extent < 2 | is.na(df$Reg.Extent)] <- "Not Regulated"
+  df$Regulated <- as.factor(df$Regulated)
+```
+
+```{r Creating a person-level dataframe}
+# This association was tested post-hoc in response to a request for a presentation on this study. It was not pre-registered, but I think is nonetheless valuable. 
+df_pl <- df %>%
+         subset(!is.na(.$Reg.Extent),
+                select = c("PID", "STAI_State", "Reg.Extent", "Event.ID")) %>%
+         group_by(PID) %>%
+         summarise(STAI_State = mean(STAI_State, na.rm = TRUE),
+                   Avg_Reg_Extent = mean(Reg.Extent, na.rm = TRUE)
+         )
+
+df_pl$STAI_State_z <- scale(df_pl$STAI_State) %>%
+                    as.numeric()
+df_pl$Avg_Reg_Extent_z <- scale(df_pl$Avg_Reg_Extent) %>%
+                    as.numeric()
+         
+m1 <- lm(Avg_Reg_Extent_z ~ STAI_State_z, data = df_pl,)
+summary(m1)
+confint(m1, level = 0.95)
+```
+
+## Calculating Quality Assurance Values and Exploring the Dataset
+
+We now want to subset events that were not regulated, that did not have negative emotions, that were regulated with only reappraisal or distraction. We'll get some output as to the stats of this dataset as well.
+
+```{r Primary Dataframe}
+df <- subset(df, df$Regulated == "Regulated" & df$Valence == "Negative" & df$MultipleStrategies == 0 & ((df$Reappraisal == 1 & df$Attention.Deployment == 0) |
+                 (df$Reappraisal == 0 & df$Attention.Deployment == 1)))
+paste("Observations:", nrow(df))
+paste("Unique Events:", nrow(unique(df[,c('PID', 'Event_chronolorder')])))
+paste("Average Number of Emotions Per Event:", round(nrow(df)/nrow(unique(df[,c('PID', 'Event_chronolorder')])),2))
+paste("Total Number of Participants:", nrow(distinct(subset(df, select = c("PID")))))
+paste("Total Number of Reappraisal Events:", nrow(distinct(subset(df, df$Reappraisal == 1 , select = c("Reappraisal", "Event.ID")))))
+paste("Total Number of Distraction Events:", nrow(distinct(subset(df, df$Attention.Deployment == 1 ,select = c("Attention.Deployment", "Event.ID")))))
+```
+
+I want to save this dataframe for future use as well. We're going to subset out variables irrelevant to our analyses.
+
+```{r Saving Dataframe}
+# Defining which columns we want 
+cols_old <- c("Event.ID", "Event_chronolorder", "Attention.Deployment", "Emotion", "Emo.Extent", "Emo.Extent.z", "Emo.Extent.pc.z",
+              "Reg.Extent", "Reg.Extent.z", "Reg.Extent.pc.z", "Emo.Extent.pmean.z",
+              "Reg.Extent.pmean.z", "PID", "ERQ_CogReapp", "ERQ_ExpSuppress", "IUS_Factor2", "BDI")
+
+# Defining what we want to change their names to
+cols_new <- c("Event", "Event_chronolorder", "Strategy.OG", "Emotion", "Emo.Extent", "Emo.Extent.z", "Emo.Extent.pc.z",
+              "Reg.Extent", "Reg.Extent.z", "Reg.Extent.pc.z", "Emo.Extent.pmean.z",
+              "Reg.Extent.pmean.z", "PID.OG", "ERQ_Reapp.OG", "ERQ_Supp.OG", "IUS_F2.OG", 
+              "BDI")
+
+# Subsettting those columns
+df_temp <- subset(df, select = cols_old)
+
+# Converting the names of reappraisal and distraction to more descriptive labels
+df_temp$Attention.Deployment[df_temp$Attention.Deployment == 1] <- "Distraction"
+df_temp$Attention.Deployment[df_temp$Attention.Deployment == 0] <- "Reappraisal"
+
+# Changing the header names to what we want
+names(df_temp) <- cols_new
+
+# Saving that subset as a .csv
+write.csv(df_temp, paste0(Export,"df_subset.csv"))
+```
+
+```{r Assessing the distributions of emotions}
+as.data.frame(sort(table(df$Emotion),decreasing = T))
+```
+
+We see a wide range of emotion report frequencies; as few as 1 instance (Disgusted) and as many as 33 (Fear) among negative values. 
+
+```{r Calculating the mean and sd for emotion frequency}
+mean(table(as.character(df$Emotion)))
+sd(table(as.character(df$Emotion)))
+```
+
+The mean number of times a negative emotion was reported was 16.6 instances with a standard deviation of 11.3. 
+
+```{r One-Sample T Tests for Negative Valence}
+  t.test(df$Emo.Extent, mu = 1, alternative = "two.sided")
+  sd(df$Emo.Extent)
+```
+
+Our haunted house stimuli elicited sufficient affective intensity (x = 5.55, 95% CI = (5.37, 5.73), sd = 1.18, t(165) = 50, p < 0.001). N.B.: mu was equated to a value of 1 in both t-tests, as 1 was the lowest value on the affective intensity scale and referred to "None at all".
+
+Note that an error message appears because while positive emotions and "other" have been removed from this dataset, such that there are 0 instances, R still recognizes them as categories within Emotion that could potentially be plotted. I could probably get rid of this error by resetting Emotion as a factor, but the error is essentially cosmetic so I'm worried. 
+
+```{r Assessing the distributions of emotions, warning=FALSE}
+plot <- ggplot(data = df, aes(x = Emotion, y = Emo.Extent)) + 
+       theme_classic()+
+       geom_jitter(aes(alpha=0.5, color=Emotion),shape=16, position=position_jitter(0.2)) + 
+       geom_violin(trim=T, alpha=0.25) +
+        labs(title = "Emotions Were Sufficiently Elicited Within Haunted House",
+                    subtitle = expression(paste("t(165) = 50 ***")),
+                     x = NULL, 
+                     y ="Emotion Intensity") +
+       scale_y_continuous(breaks = c(2:7)) +
+       coord_cartesian(ylim=c(1.5,7.5)) +
+       theme(legend.position="none") +
+       geom_boxplot(width=0.2, color="black", alpha=0.0) +
+       theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+       theme(plot.subtitle = element_text(size = 6, hjust = 0.5, face = "italic")) +
+       theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+       theme(axis.title = element_text(size = 14)) +
+       theme(axis.text.x = element_text(size = 10, color = "Black", angle=-45, vjust = 1, hjust = 0.0)) +
+       theme(axis.text.y = element_text(size = 12, color = "Black")) 
+plot
+```
+
+```{r Assessing the distributions of negative affect}
+ggplot(data = df, aes(x = Valence, y = Emo.Extent)) + 
+       theme_classic()+
+       geom_jitter(aes(alpha=0.2),shape=16, position=position_jitter(0.2)) + 
+       geom_violin(trim=T, alpha=0.5) +
+       ylab("Affective Intensity") +
+       theme(legend.position="none") +
+       geom_boxplot(width=0.2, color="black", alpha=0.2)
+```
+
+# Preliminary Analyses
+
+We're going to start with a bit of a sanity check: if we're tapping into regulation, it would make sense that as negative affective intensity increases, the effort to regulate that emotion increases as well. 
+
+``` {r Regression Model}
+m1 <- lm(Reg.Extent.z ~ Emo.Extent.z, data = df)
+summary(m1)
+```
+
+``` {r Confidence Intervals for m1}
+confint(m1, oldNames = FALSE)
+```
+
+When we examine whether there's a relationship between affective intensity and the extent to which it's regulated with a bivariate linear regression, we find that affective intensity does have predictive value towards regulation extent [t(164) = 4.39, p < 0.001, B = 0.351, 95% CI(0.193, 0.509), adj.r < 0.100], such that as affective intensity increases, regulatory extent increases as well. 
+
+```{r Regression Model Plots}
+ggplot(data = df, aes(x = Emo.Extent.z, y = Reg.Extent.z, color = Emo.Extent.z)) +
+    stat_smooth(aes(color = ..x..), method="lm", alpha = .25, size = 2) +
+    labs(title = "Regulation Extent By Intensity of Emotion",
+       subtitle = "Affective Intensity Predicts Regulation Extent (B = 0.351)",
+       x = "Intensity of Emotion (z)", 
+       y ="Regulation Extent (z)",
+       caption = "p < 0.001") +
+    coord_cartesian(xlim=c(-2.5, 1.5), ylim=c(-2.5, 2.5)) +
+    scale_color_gradient2(low = "#1B9E77", high = "#D95F02", midpoint = median(-1)) +
+    theme_classic() +
+    theme(legend.position="none") +
+    theme(plot.title = element_text(face="bold", size=13, hjust = 0.5)) +
+    theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
+    theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+    theme(axis.title = element_text(size = 16)) +
+    theme(axis.text.x = element_text(size = 14, color = "Black")) +
+    theme(axis.text.y = element_text(size = 14, color = "Black")) 
+```
+
+Great, it works out with a basic linear model. Let's check with a multilevel model that's person-centered (and maybe with some covariates).
+
+I generally subscribe to the information criterion approach, so I'm going to assess the data via model comparison. I'll start by generating my null model with no fixed effect predictors and only my random intercept. If an HLM approach is appropriate, my random intercept should be explaining some degree of the variance in my outcome and I can determine that with an ICC calculation.
+
+```{r Null Model}
+  m0 <- lmer(Reg.Extent.z ~ 1 + (1 | PID), data = df, REML = F)
+  icc(m0)
+``` 
+
+An ICC of 0.346 is pretty substantial. There's not lower or upper thresholds by which to assess the fittedness of ICC, but this is telling me that individual differences attributable to the PID variable are explaining a pretty big chunk of the variance (ICC = 0.0 would suggest no variance is explained and ICC = 1.0 would suggest all the variance is explained), so it's great we're using an HLM approach. 
+
+Now we'll iteratively construct our models. This is a little tricky because you should only add one variable at a time and test it against the previous iteration, stopping when you fail to find an improvement. However, if we're taking a person-centered approach, as I think it appropriate based on the high ICC value, we divide the emotional extent variable into two components: 1) a person's average intensity, and 2) their person-centered intensity. These together add up to what Emo.Extent would be if it wasn't person-centered anyway, so I don't think we're unduly influencing the amount of variance they explain (thus limiting their influence upon artificially deflating their AIC and BIC scores). All that is to say, I think this approach, comparing m1 to our null, is okay. Also note, I totally violate that approach with m2 by adding all of the covariates. Frankly, this is not a crucial analysis, so I was really just interested to see whether this relationship manages to hold up at all, even in the most conservative of circumstances. 
+fasdfasdf```{r Experimental Models}
+  m1 <- lmer(Reg.Extent.z ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + (1 | PID), data = df, REML = F)  
+  m2 <- lmer(Reg.Extent.z ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + Age + Gender + BDI + 
+             IUS_Factor2 + STAI_State + STAI_Trait + (1 | PID), data = df, REML = F)
+```
+
+Now we run the model comparison and find that both models perform better than their predecessors. 
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+```
+
+NOTE: A very common warning message outputted by stargazer is "Warning: length of NULL cannot be changed." I haven't found a solution for it and neither has anyone in this [stackoverflow post](https://stackoverflow.com/questions/62375365/stargazer-error-length-of-null-cannot-be-changed-when-running-rchunk-in-rmarkd), but it's benign. 
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+stargazer(m0,m1,m2,
+          type = "text",
+          title= "Affect Predicting Regulation",
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Regulation Extent (z)",
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Age", "Gender",
+                               "Depression", "IUS, Factor 2", "STAI, State", "STAI, Trait", "Intercept"),
+          ci = TRUE,
+          notes = "")
+```
+This argument will output the coefficients for each PID and each variable in the model, which is helpful to see variance in the intercept that we allowed to vary randomly.
+
+```{r Multilevel Model 1 Coefficients}
+  coef(m2)
+```  
+Now we can see the fixed effects and standard errors across participants. 
+
+```{r Multilevel Model 1 Fixed Effects and Standard Error}  
+  fixef(m2)
+  se.fixef(m2)
+```  
+
+and the random effect of participant
+
+```{r Multilevel Model 1 Random Effects}  
+  ranef(m2)
+```  
+Some quick visualizations of the aforementioned variables
+
+```{r Multilevel Model 1 Descriptive Plots}
+  plot_model(m2, type = "re")
+  plot_model(m2, type = "pred")
+  plot_model(m2, type = "slope")
+  plot(m2)
+```
+
+This is a quality assurance check to make sure we did not violate any essential assumptions with out model. The qqmath plot should be linear, as we observe it to be, and the test of heterogenity in variance (Levene's Test) is *close* but just above 0.05 for our variable of interest, suggesting that the variances across our grouping variables (i.e., participant) is adequate. 
+
+``` {r Multilevel Model 1 Assumption Tests}
+  df$AbsResSqr <- (abs(residuals(m2)))^2
+  LeveneTest <- lm(AbsResSqr ~ Emo.Extent.pc.z + Emo.Extent.pmean.z, data=df)
+  anova(LeveneTest)
+  qqmath(m2, id=0.05)
+  rm(LeveneTest)
+```  
+
+Our model using person centered affective intensity and covariates as fixed effects, with person-mean affective intensity as a control, performed better than our other models, including a model without fixed effects [ICC = 0.346], a model without covariates. Within this ideal model, person-centered affective intensity [B = 0.312, 95% CI = 0.166, 0.458, p < 0.001] was a significant predictor of regulation effort. Each one standard deviation unit increase in affective intensity of a negative event was met with a 0.312 standard deviation unit increase in the effort to regulate that event. This suggest that our paradigm was sufficiently eliciting regulatory behaviors from participants in a way that logically makes sense. 
+
+```{r Multilevel Model Plot} 
+df$fit <- fitted(m2)
+plot <- ggplot(data = df, aes(x = Emo.Extent.pc.z, y = fit)) +
+                stat_smooth(aes(x = Emo.Extent.pc.z, y = Reg.Extent.z, color = as.factor(PID)), 
+                            method = "lm", 
+                            alpha = .00, 
+                            size = .5) +
+                stat_smooth(method="lm", se = T, alpha = .6, size = 2.5) +
+                labs(title = "Affective Intensity Predicts Regulation Effort",
+                     subtitle = "B = 0.312 ; p < 0.001",
+                     x = paste0("Affective Intensity (z)\n(", 
+                                "mean = ",
+                                round(mean(df$Emo.Extent, na.rm = T),1),
+                                "; sd = ",
+                                round(sd(df$Emo.Extent, na.rm = T),1),
+                                " )"), 
+                     y = paste0("Regulation Effort (z)\n(", 
+                                "mean = ",
+                                round(mean(df$Reg.Extent, na.rm = T),1),
+                                "; sd = ",
+                                round(sd(df$Reg.Extent, na.rm = T),1),
+                                " )")) +
+                coord_cartesian(xlim=c(-2.5,2.5), ylim=c(-2, 2)) +
+                theme_classic() +
+                theme(legend.position="none") +
+                theme(plot.title = element_text(face="bold", size=13, hjust = 0.5)) +
+                theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
+                theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+                theme(axis.title = element_text(size = 16)) +
+                theme(axis.text.x = element_text(size = 14, color = "Black")) +
+                theme(axis.text.y = element_text(size = 14, color = "Black")) 
+plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  tiff(paste0(Plots, "Fig2.tiff"),       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  plot
+  dev.off()
+  rm(plot)
+```
+
+# Another Preliminary Analysis
+
+Before I hop into the primary analysis, there's one more thing I wanted to explore. It makes sense that individuals with a high ERQ Reappraisal score should report using reappraisal more frequently than those that do not. I'm going to create a dataframe to explore this
+
+I'm first generating an array of PIDs to be the rows ...
+
+````{r Designating Rows}
+rows <- sort(unique(df$PID))
+```
+
+...and creating an array of variables of interest to be the columns.
+
+````{r Designating Columns}
+cols <- c("PID", "Percent.Reapp", "ERQ_Reapp")
+```
+
+I'm creating an empty dataframe to house this new data
+
+````{r Creating a Person-Level Empty Dataframe}
+df.pl <- data.frame(matrix(NA, 
+                   nrow = length(rows), 
+                   ncol = length(cols), 
+                   dimnames = list(rows, cols)))
+rm(cols)
+```
+
+Then I'm copying over each person's ERQ score.
+
+````{r Populating ERQ in the New Dataframe}
+df.pl$PID <- rows
+for (i in rows){
+  df.pl$ERQ_CogReapp[df.pl$PID == i] <- df$ERQ_CogReapp[df$PID == i][1]
+}
+rm(i)
+```
+
+Here, I'm starting off by creating a temporary dataframe containing each participant's regulatory response for each event and then calculating how frequently they used reappraisal instead of another strategy (Percent of Events Reappraised), with the notion that the ERQ reappraisal subscale should predict this. 
+
+```{r Populating accuracy and percentage of distraction}
+df_temp <- subset(df,
+                  select = c("PID", "Event.ID", "Reappraisal")) %>%
+           distinct()
+
+for (i in rows){
+  df.pl$Percent.Reapp[df.pl$PID == i] <- sum(df_temp$Reappraisal[df_temp$PID == i])/length(unique(df_temp$Event.ID))
+}
+
+rm(df_temp,i)
+```
+
+Ouff, we really don't have enough reappraisal to run this analysis well, so I don't really trust the analysis, but we made it this far, so let's take a look, knowing we can't really trust it whether good or bad.  
+
+```{r ERQ Analysis}
+  m1 <- lm(Percent.Reapp ~ ERQ_CogReapp, data = df.pl)
+  stargazer(m1,type = "text")
+  rm(m1)
+```
+
+We didn't find a ***damn*** thing, but again, let's keep in mind that this is very underpowered.
+
+# Primary Analysis
+
+Now we're going to run our primary analysis, using pretty much the same approach as our last HLM, so I'm going to skip much of the commentary. The primary difference is that this is a *binary logistic regression*, meaning we have a continuous predictor, but our outcome is an either/or, binary variable. People either used reappraisal or they used distraction. In this case, I made distraction's value 1 and reappraisal's value 0 so that if our effect works like it canonically should, we'll see a positive relationship. The interpretation of BLR's are a little different because we get a beta value, but to make it interpretable we need to convert it to an odds ratio (OR). The nice thing, though, is that much like a standardized beta, an OR is a statistic and effect size wrapped in one. I think everything else should be the same, but I'll mention explicitly if not.
+
+```{r Mixed Effect Logistic Regression Model - NULL}
+m0 <- glmer(Attention.Deployment ~ 1 + (1 | PID), data = df, family = binomial)
+icc(m0)
+```
+
+Here, I'm being a little more careful in my model construction. I originally tested only the first model and found no performance differences and stopped, but since we expected to find effects, I'm coming back to run all the models we set out to test. 
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1 <- glmer(Attention.Deployment ~ Emo.Extent.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Attention.Deployment ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + (1 | PID), data = df, family = binomial)
+m3 <- glmer(Attention.Deployment ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + Gender + 
+             IUS_Factor2 + STAI_State + STAI_Trait + (1 | PID), data = df, family = binomial)
+```
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+anova(m2, m3)
+```
+
+Again, we found a trend towards significance, but it's a farcry from the effect sizes we might expect based upon lab and EMA studies. 
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(m3) <- "lmerMod"
+stargazer(m0,m1,m2,m3,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)","Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Gender",
+                               "IUS, Factor 2", "STAI, State", "STAI, Trait", "Intercept"), ci = T,
+          notes = "")
+```
+
+```{r}
+exp(fixef(m1))
+```
+
+We fail to find a model with predictive value in this relationship.
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1.e <- effect("Emo.Extent.z",m1,xlevels=list(Emo.Extent.z=seq(range(df$Emo.Extent.z)[1],
+                                                       range(df$Emo.Extent.z)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Emo.Extent.z, y=fit)) +
+  geom_jitter(data = df, aes(x=Emo.Extent.z, y=Attention.Deployment, 
+                             color = as.factor(Attention.Deployment)),
+              width = 0.15, height = 0.025, size = 3.5) +
+  geom_line(color = "Black", size = 4.5) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df$Emo.Extent.z)[1],
+                                                         range(df$Emo.Extent.z)[2], 
+                                                         (range(df$Emo.Extent.z)[2] - range(df$Emo.Extent.z)[1])/6),0)) +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
+  coord_cartesian(xlim = c(range(df$Emo.Extent.z)[1],
+                           range(df$Emo.Extent.z)[2]), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black")) 
+plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  tiff(paste0(Plots,"Fig3.tiff"),
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  plot
+  dev.off()
+  rm(plot)
+```
+
+However, I'm running into convergence issues sometimes and it depends upon which computer I'm running it on. I've seen others say similar things online and I'm not sure why it's happening. However, if you're a reviewer and checking my due diligence, I'm doing to be conservative and explore options for optimizers. I normally **do not** use optimizers because I personally find them to be too black-boxy, but if I'm going to give this emotion intensity-regulation extent relationship a fair shake, I need to give it all of the affordances and breaks that I can. I'm pulling this next portion from [this tutorial on the use of optimizers to address convergence issues](https://joshua-nugent.github.io/allFit/).
+
+```{r Testing Model Optimizers, include=FALSE}
+diff_optims <- lme4::allFit(m1)
+```
+
+```{r Finding the Appropriate Options}
+diff_optims_OK <- diff_optims[sapply(diff_optims, is, "merMod")]
+lapply(diff_optims_OK, function(x) x@optinfo$conv$lme4$messages)
+```
+
+```{r Using the ideal optimizer}
+convergence_results <- lapply(diff_optims_OK, function(x) x@optinfo$conv$lme4$messages)
+working_indices <- sapply(convergence_results, is.null)
+if(sum(working_indices) == 0){
+  print("No algorithms from allFit converged. You may still be able to use the results, but proceed with extreme caution.")
+  first_fit <- NULL
+} else {
+  first_fit <- diff_optims[working_indices][[1]]
+}
+first_fit
+```
+
+In the end, it wasn't super helpful.
+
+# Power Analyses
+
+I need to pull power for my later projects (a little peak behind the curtain: I'm retroactively writing this part to demonstrate what I had originally done in my second year of grad school when I was much worse at documenting my code). Traditional power analysis tools like GPower and WebPower confuse the hell out of me when it comes to Hierarchical Binary Logistic Regression. A traditional non-hierarchical approach to power undervalues the power present in a nested sample, as it assumes independence in observations, and would suggest a far greater sample size than which is actually needed. Simr is a really really great package to assess power using simulation analyses based upon observed effects (another little peak behind the curtain: the powerCurve analysis takes ***forever*** to run on standard computers and finding the right breaks can be a bit of trial and error. As such, I'm again benefiting from retroactivity here by being able to show the exact n values at which we can achieve adequate power).
+
+```{r Power Analysis, message=FALSE, warning=FALSE}
+m1_extended <- simr::extend(m1, 
+                      along = "PID",
+                      n = 80)
+
+simr::powerCurve(m1_extended,
+                 along = "PID",
+                 breaks = c(70,72,74,76,78,80),
+                 nsim = 1000,
+                 seed = 12345)
+```
+
+# Last Ditch Effort Analysis
+
+One last check: someone could argue that because we captured regulatory behavior at the event level but our dataframe is structured such that each row represents one of the many emotions a person could have experienced for any one event, that we are skewing the results. We can imagine a situation where a person felt 2 fear and 7 tense, but we're attributing the same regulatory strategy to each. Now I'll try to create one last dataframe that sums and averages affective intensity at the event level to see if either demonstrate predictive utility.
+
+```{r Primary Dataframe}
+df_temp <- subset(df, select = c("PID", "Event_chronolorder")) %>%
+           distinct()
+          
+df_temp$Emo_Sum <- NA
+df_temp$Emo_Mean <- NA
+df_temp$Emo_Sum.z <- NA
+df_temp$Emo_Mean.z <- NA
+df_temp$Emo_Sum_pc.z <- NA
+df_temp$Emo_Mean_pc.z <- NA
+df_temp$Emo_Sum_pmean.z <- NA
+df_temp$Emo_Mean_pmean.z <- NA
+df_temp$Attention.Deployment <- NA
+df_temp$Gender <- NA
+df_temp$IUS_Factor2 <- NA
+df_temp$STAI_State <- NA
+df_temp$STAI_Trait <- NA
+
+for (i in 1:nrow(df_temp)){
+  df_temp$Emo_Sum[i] <- sum(df$Emo.Extent[df$PID == df_temp$PID[i] &
+                                          df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Emo_Sum.z[i] <- sum(df$Emo.Extent.z[df$PID == df_temp$PID[i] &
+                                          df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Emo_Sum_pc.z[i] <- sum(df$Emo.Extent.pc.z[df$PID == df_temp$PID[i] &
+                                        df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Emo_Sum_pmean.z[i] <- sum(df$Emo.Extent.pmean.z[df$PID == df_temp$PID[i] &
+                                        df$Event_chronolorder == df_temp$Event_chronolorder[i]])  
+  df_temp$Emo_Mean[i] <- mean(df$Emo.Extent[df$PID == df_temp$PID[i] &
+                                        df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Emo_Mean.z[i] <- mean(df$Emo.Extent.z[df$PID == df_temp$PID[i] &
+                                        df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Emo_Mean_pc.z[i] <- mean(df$Emo.Extent.pc.z[df$PID == df_temp$PID[i] &
+                                        df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Emo_Mean_pmean.z[i] <- mean(df$Emo.Extent.pmean.z[df$PID == df_temp$PID[i] &
+                                        df$Event_chronolorder == df_temp$Event_chronolorder[i]])
+  df_temp$Gender[i] <- df$Gender[df$PID == df_temp$PID[i] &
+                                 df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]
+  df_temp$IUS_Factor2[i] <- df$IUS_Factor2[df$PID == df_temp$PID[i] &
+                                 df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]  
+  df_temp$STAI_State[i] <- df$STAI_State[df$PID == df_temp$PID[i] &
+                                 df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]
+  df_temp$STAI_Trait[i] <- df$STAI_Trait[df$PID == df_temp$PID[i] &
+                                 df$Event_chronolorder == df_temp$Event_chronolorder[i]][1] 
+  df_temp$Attention.Deployment[i] <- as.numeric(df$Attention.Deployment[df$PID == df_temp$PID[i] &
+                                 df$Event_chronolorder == df_temp$Event_chronolorder[i]][1])  
+}
+
+write.csv(df_temp, paste0(Export,"df_subset_eventlevel.csv"))
+```
+
+```{r Mixed Effect Logistic Regression Model - NULL}
+m0 <- glmer(Attention.Deployment ~ 1 + (1 | PID), data = df_temp, family = binomial)
+icc(m0)
+```
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1 <- glmer(Attention.Deployment ~ Emo_Sum.z + (1 | PID), data = df_temp, family = binomial)
+m2 <- glmer(Attention.Deployment ~ Emo_Sum_pc.z + Emo_Sum_pmean.z + (1 | PID), data = df_temp, family = binomial)
+m3 <- glmer(Attention.Deployment ~ Emo_Sum_pc.z + Emo_Sum_pmean.z + Gender + 
+             IUS_Factor2 + STAI_State + STAI_Trait + (1 | PID), data = df_temp, family = binomial)
+```
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+anova(m2, m3)
+```
+
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(m3) <- "lmerMod"
+stargazer(m0,m1,m2,m3,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Gender",
+                               "IUS, Factor 2", "STAI, State", "STAI, Trait", "Intercept"),
+          notes = "")
+```
+
+```{r}
+exp(fixef(m1))
+# exp(confint(m1))
+```
+
+No luck with the sum. Let's try the average. 
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1.e <- effect("Emo_Sum.z",m1,xlevels=list(Emo_Sum.z=seq(range(df_temp$Emo_Sum.z)[1],
+                                                         range(df_temp$Emo_Sum.z)[2],
+                                                         0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Emo_Sum.z, y=fit)) +
+  geom_jitter(data = df_temp, aes(x=Emo_Sum.z, y=Attention.Deployment, 
+                             color = as.factor(Attention.Deployment)),
+              width = 0.2, height = 0.025, size = 1) +
+  geom_line(color = "Black", size = 1.75) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df_temp$Emo_Sum.z)[1],
+                                                         range(df_temp$Emo_Sum.z)[2], 
+                                                         (range(df_temp$Emo_Sum.z)[2] - range(df_temp$Emo_Sum.z)[1])/6),0)) +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
+  coord_cartesian(xlim = c(range(df_temp$Emo_Sum.z)[1],
+                           range(df_temp$Emo_Sum.z)[2]), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(size = 10, color = "Black")) +
+  theme(axis.text.y = element_text(size = 10, color = "Black")) 
+plot
+```
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1 <- glmer(Attention.Deployment ~ Emo_Mean.z + (1 | PID), data = df_temp, family = binomial)
+m2 <- glmer(Attention.Deployment ~ Emo_Mean_pc.z + Emo_Mean_pmean.z + (1 | PID), data = df_temp, family = binomial)
+m3 <- glmer(Attention.Deployment ~ Emo_Mean_pc.z + Emo_Mean_pmean.z + Gender + 
+             IUS_Factor2 + STAI_State + STAI_Trait + (1 | PID), data = df_temp, family = binomial)
+```
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+anova(m2, m3)
+```
+
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(m3) <- "lmerMod"
+stargazer(m0,m1,m2,m3,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", "Affective Intensity (Person-Mean)", "Gender",
+                               "IUS, Factor 2", "STAI, State", "STAI, Trait", "Intercept"),
+          notes = "")
+```
+
+```{r}
+exp(fixef(m1))
+```
+
+No luck with the mean either.
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1.e <- effect("Emo_Mean.z",m1,xlevels=list(Emo_Mean.z=seq(range(df_temp$Emo_Mean.z)[1],
+                                                       range(df_temp$Emo_Mean.z)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Emo_Mean.z, y=fit)) +
+  geom_jitter(data = df_temp, aes(x=Emo_Mean.z, y=Attention.Deployment, 
+                             color = as.factor(Attention.Deployment)),
+              width = 0.2, height = 0.025, size = 1) +
+  geom_line(color = "Black", size = 1.75) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df_temp$Emo_Mean.z)[1],
+                                                         range(df_temp$Emo_Mean.z)[2], 
+                                                         (range(df_temp$Emo_Mean.z)[2] - range(df_temp$Emo_Mean.z)[1])/6),0)) +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
+  coord_cartesian(xlim = c(range(df_temp$Emo_Mean.z)[1],
+                           range(df_temp$Emo_Mean.z)[2]), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 9, color = "Black")) +
+  theme(axis.text.x = element_text(size = 10, color = "Black")) +
+  theme(axis.text.y = element_text(size = 10, color = "Black", hjust = 0.5)) 
+plot
+```
+
+I think I've exhausted all my options and have come to the conclusion that we cannot establish a relationship between affective intensity and affective usage within this specific dataset. Importantly, we are exploring this in circumstances where affective intensity is relatively high, the stimuli are dynamic, multimodal, and proximal (rather than decontextualized and/or distal). 

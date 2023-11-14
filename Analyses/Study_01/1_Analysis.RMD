@@ -1,0 +1,1106 @@
+---
+title: "ER Choice v. Usage - Study 1 Analysis"
+author: "W.J. Mitchell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+NAVIGATION / QUESTIONS: 
++ The pilot found that the strategies individuals described using approximately one week later were not related to the affective intensity of the experiences they underwent. However there were a number of limitations inherent to this study. For one, it's unclear how reliable the memory of emotion regulation strategy usage is one week after usage. It also might be the case that emotion regulation is not applied at the level of the event, which might contain multiple emotions, but at the level of the emotion. We also were left to infer the direction of regulation based upon descriptions. Lastly, there are a number of covariates which might be important to capture.
+
+PREDICTIONS: 
++ We do not believe that negative affective intensity will continue to demonstrate predictive utility towards ER usage (i.e., distraction v. reappraisal) when measured beyond a lab context. We will adjust for a number of individual difference measures in the process.
+
+ISSUES: 
++ We captured a number of covariates relevant to regulation strategy choice such as cognitive load and affective expectations. However, at the analysis stage, we found that we lacked the volume of data necessary to incorporate these variables into our models. As such we ran supplemental analyses, to measure their influence upon regulation strategy usage directly and found no association between cognitive load and strategy usage,
+
+NOTES:
+
+# Setup
+
+```{r Packages I Use}
+  # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
+  # Loading in my packages with my pacman manager
+  pacman::p_load(effects,
+                 here,
+                 influence.ME,
+                 lattice,
+                 lme4, 
+                 lmerTest,
+                 performance,
+                 sjPlot,
+                 stargazer, 
+                 tidyverse)
+    
+  # Loading a custom function that will clean NA values from dataframes
+  source("https://github.com/wj-mitchell/stinkR/blob/main/remove_NAs.R?raw=TRUE", local = T)
+  # Loading a custom function that will just make building blanke dataframes simpler
+  source("https://github.com/wj-mitchell/stinkR/blob/main/make_df.R?raw=TRUE", local = T)
+```
+
+```{r Number Formatting}
+  options(scipen=100)
+  options(digits=3)
+  options(tinytex.verbose = TRUE)
+```
+
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like \`C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to.
+
+```{r Setting Working Directories}
+  # Identifying our main directory
+  WorkDir <- here::here()
+
+  # Identifying specific directories to read and write from
+  Import <- paste0(WorkDir, "/../data/Study_01/Raw/")
+  Plots <- paste0(WorkDir, "/../plots/")
+```
+
+# Loading in the data
+
+Once we've loaded in the data, we want to exclude any observations that lack a clear emotion (following lemmatization (i.e., `df$EmoMod`)). 
+
+```{r Pulling in Dataframe}
+  df <- read.csv(file = "C:/Users/Administrator/Documents/GitHub/fright_night_study/data/Study_01/Raw/df.csv", 
+                 header = T, 
+                 sep=",",
+                 row.names = 1, 
+                 stringsAsFactors = F,
+                 na.strings=c("","NA", "N/A"))
+
+  # df <- read.csv(file = paste0(Import, "df.csv"), 
+  #                header = T, 
+  #                sep=",",
+  #                row.names = 1, 
+  #                stringsAsFactors = F,
+  #                na.strings=c("","NA", "N/A"))
+  df_all <- df %>%
+        subset(!is.na(df$EmoMod) &
+               df$EmoMod != "" &
+               !is.na(df$PID))
+```
+
+Here we are again creating a binary variable to track whether any given observation was regulated with either strategy, but not both, and we are creating both a quantiative and qualitative variable.
+
+```{r Creating a Disengagement Regulatory Superfactor}
+df_all$Disengage <- NA
+df_all$Disengage_cat <- NA
+df_all$Disengage[(df_all$Attention.Deployment == 1 | df_all$Response.Modulation == 1) & df_all$Reappraisal == 0] <- 1
+df_all$Disengage_cat[(df_all$Attention.Deployment == 1 | df_all$Response.Modulation == 1) & df_all$Reappraisal == 0] <- "Disengage"
+df_all$Disengage[df_all$Attention.Deployment == 0 & df_all$Response.Modulation == 0 & df_all$Reappraisal == 1] <- 0
+df_all$Disengage_cat[df_all$Attention.Deployment == 0 & df_all$Response.Modulation == 0 & df_all$Reappraisal == 1] <- "Engage"
+```
+
+and another that's ignoring cases of suppression to only focus on distraction and reappraisal.
+
+```{r Creating a Regulatory Superfactor}
+df_all$Distracted <- NA
+df_all$Distracted_cat <- NA
+df_all$Distracted[df_all$Attention.Deployment == 1 & df_all$Response.Modulation == 0 & df_all$Reappraisal == 0] <- 1
+df_all$Distracted_cat[df_all$Attention.Deployment == 1 & df_all$Response.Modulation == 0 & df_all$Reappraisal == 0] <- "Distracted"
+df_all$Distracted[df_all$Attention.Deployment == 0 & df_all$Response.Modulation == 0 & df_all$Reappraisal == 1] <- 0
+df_all$Distracted_cat[df_all$Attention.Deployment == 0 & df_all$Response.Modulation == 0 & df_all$Reappraisal == 1] <- "Reappraised"
+```
+
+Unfortunately, in exporting and importing the .csv, some of the data is not in the proper structure anymore, so we need to fix that.
+
+```{r Coercing data into the appropriate structure}
+df_all$Intense.z <- as.numeric(df_all$Intense.z)
+df_all$CogLoad_Post <- as.numeric(df_all$CogLoad_Post)
+df_all$Intense.pmean.z <- as.numeric(df_all$Intense.pmean.z)
+```
+
+# Subsetting Relevant Data
+
+we're starting by focusing on those cases in which the intended regulation goal was to downregulate and excluding any cases in which we asked participants to recall emotional experiences that they previously recalled. We plan to reanalyze this data later to assess accuracy in regulatory recall. 
+
+```{r Reducing Observations and Variables}
+df_sub <- subset(df_all, 
+             df_all$Reg == "Decrease" &
+             df_all$Timing != "MemReg")
+```
+
+
+# Constructing a Person-Level Dataframe
+
+Many of the analyses that will follow are going to be looking at person level variables. As such, it is inappropriate to use a criterion variable that exists at the sub-participant level (i.e., we want participant averaged values, like average intensity or proportion of strategies used).
+
+```{r Constructing a Person level Dataframe}
+df_pl <- data.frame("PID" = unique(df_sub$PID),
+                    "PropDist" = NA)
+df_pl <- subset(df_sub, 
+                !is.na(df_sub$HH.Enjoy) , 
+                select = c("PID", names(df_sub)[grep(names(df_sub), pattern = "Motive")],
+                          "Pos.Anticipate", "Neg.Anticipate", "CogLoad_Post", "CogLoad_Pre", 
+                          "Cond", "Date_HH", "Time_HH", "Group", "Fear.Before", "Fear.During", 
+                          "Intense.pmean.z", "Fear.Enjoy", "HH.Enjoy", "Startle", "Peer.Presence",
+                          "Sex", "Age", names(df_sub)[which(names(df_sub) == "BDI_Total"):which(names(df_sub) == "IRQ_PE")])) %>%
+          distinct() %>%
+          merge(x = df_pl,
+                y = ., 
+                by = "PID",
+                all.x = F)
+
+for (i in 1:nrow(df_pl)){
+  total <- nrow(subset(df_sub, 
+                       df_sub$PID == df_pl$PID[i]))
+  dist <- nrow(subset(df_sub, 
+                      df_sub$PID == df_pl$PID[i] & df_sub$Distracted == 1))
+  if (total > 0) {
+    df_pl$PropDist[i] <- dist/total
+  }
+}
+
+rm(i, total, dist)
+```
+
+```{r}
+summary(aov(PropDist ~ Cond, data = df_pl))
+```
+
+# Possible Covariates
+
+We'll start by analyzing a few covariates which could likely have an influence upon our effects.
+
+## Timing's Influence on Regulation
+
+First, related to previous limitations, I want to examine how affective intensity changes as a result of time of reporting. Joanne's paper suggests there may be a time effect, though, in her case it was due to an interaction effect that's a little more complicated than what I'm dealing with.
+
+```{r Immediate versus Novel Contrast}
+(model <- t.test(df_sub$Intense.z[df_sub$Timing == "ImmReg"],
+                 df_sub$Intense.z[df_sub$Timing == "DelReg"],
+                 alternative = "two.sided",
+                 paired = F))
+```
+
+Yet interestingly the difference between immediate novel and delayed novel is not quite significant, or very large
+
+```{r Reporting}
+results <- report::report(model)
+```
+
+```{r Visualizing The Difference Between Novel Immediate and Delayed Recall}
+df_sub$Timing <- factor(df_sub$Timing, levels = c("ImmReg", "DelReg"))
+ggplot(data = df_sub, aes(x = Timing, y = Intense.z)) + 
+       theme_classic()+
+       geom_jitter(aes(alpha=0.5, color=Timing),shape=16, position=position_jitter(0.2)) + 
+       geom_violin(trim=T, alpha=0.25) +
+      labs(title = "Time Influenced Emotional Intensity",
+                  subtitle = paste("No differences were observed between novel and familiar recalled events."),
+                   x = NULL,
+                   y ="Emotion Intensity") +
+       scale_y_continuous(breaks = c(-2:2)) +
+       coord_cartesian(ylim=c(-2.25,2.25)) +
+       theme(legend.position="none") +
+       geom_boxplot(width=0.2, color="black", alpha=0.0) +
+       theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+       theme(plot.subtitle = element_text(size = 6, hjust = 0.5, face = "italic")) +
+       theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+       theme(axis.title = element_text(size = 14)) +
+       theme(axis.text.x = element_text(size = 10, color = "Black", angle=-45, vjust = 1, hjust = 0.0)) +
+       theme(axis.text.y = element_text(size = 12, color = "Black")) 
+```
+
+But more importantly, I want to know if timing is an important covariate to control for our outcome variable. I'm curious whether any differences exist in how frequently strategies were reported by timepoint.
+
+```{r Frequency of Strategies at different time points}
+  (model <- chisq.test(x = df_sub$Timing, y= df_sub$Distracted_cat))
+  ggplot(data = subset(df_sub, !is.na(df_sub$Distracted_cat)), aes(x = Timing, color = Distracted_cat, fill = Distracted_cat)) +
+        geom_bar() +
+        scale_x_discrete("Timepoint", breaks = c("Immediate Recall", "Novel Recall")) +
+        scale_y_continuous(breaks = c(0,100,200)) +
+        labs(title = "Frequency of Strategy Usage by Time Reported",
+            subtitle = "Strategies were reported equally as frequently across timepoints",
+             x = NULL,
+             y ="Frequency") +
+        scale_color_brewer(palette = "Dark2") +
+        scale_fill_brewer(palette = "Set2") +
+        coord_cartesian(ylim=c(0.0, 200.0)) +
+        theme_classic() +
+        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+        theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
+        theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
+        theme(axis.title = element_text(size = 10)) +
+        theme(axis.text.x = element_text(size = 14, color = "Black")) +
+        theme(axis.text.y = element_text(size = 12, color = "Black")) +
+        theme(legend.key.size = unit(0.5, 'cm')) +
+        theme(legend.title = element_text(size=8)) +
+        theme(legend.text = element_text(size=6))
+```
+
+We also fail to find any significant differences in strategy usage as a consequence of the timepoint at which they were reported.
+
+```{r Reporting}
+results <- c(results, "A Person's chi-squared test suggests that no differences exist in the endorsement of strategy usage by timepoint (x2 = 0.001, df = 1, p = 1)")
+```
+
+## How Does Cognitive Load Infleunce Strategy Selection
+
+Cognitive Load should predict strategy selection, in that a higher load predicts a greater likelihood of selecting reappraisal. However, we do not have enough data for models of the complexity I would have liked. Our models generally fail to converge with these covariates, so I am retroactively going back and adding this section wherein I explore the relationship between our covariates and variable of interest in isolation.
+
+We measured cognitive load as the difference in RAT score between immediately after exposure and baseline. A score of 0 would suggest no difference, negative value correspond to reduce cognitive load and positive to increased cognitive load.
+
+```{r Models Using Cognitive Load}
+summary(lm(PropDist ~ CogLoad_Post, data = df_pl))
+confint(lm(PropDist ~ CogLoad_Post, data = df_pl))
+summary(lm(Intense.pmean.z ~ CogLoad_Post, data = df_pl))
+summary(lm(PropDist ~ Intense.pmean.z + CogLoad_Post, data = df_pl))
+summary(lm(PropDist ~ Intense.pmean.z * CogLoad_Post, data = df_pl))
+summary(lm(PropDist ~ CogLoad_Pre, data = df_pl))
+summary(lm(Intense.pmean.z ~ CogLoad_Pre, data = df_pl))
+summary(lm(PropDist ~ Intense.pmean.z + CogLoad_Pre, data = df_pl))
+summary(lm(PropDist ~ Intense.pmean.z * CogLoad_Pre, data = df_pl))
+```
+
+We fail to find a model with predictive value in this relationship as well.
+
+```{r Results}
+results <- c(results, "When examining the association between cognitive load as measured immediately after the haunted house relative to each participant's baseline cognitive load and affective intensity, we fail to find any significant association (b = 0.00, se = 0.05, t(74) = 0.04, p = 0.97). When examining cognitive load's predictive utility towards strategy usage, we also fail to find any significant association (b = -0.01, se = 0.01, t(74) = -1.26, p = 0.21), even when adjusting for affective intensity within the model (b = -0.02, se = 0.01, t(73) = -1.27, p = 0.21).")
+```
+
+## Do Expectations Influence Strategy Choice?
+
+We would expect that the expectation that participants enter the haunted house with would likely have an influence upon their experience when in the haunted house.
+
+```{r Expectation Models}
+summary(lm(PropDist ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl))
+confint(lm(PropDist ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl))
+summary(lm(Intense.pmean.z ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl))
+```
+
+It does not seem to be the case that the fear and negative emotion someone anticipates before hand significantly predicts proportion of strategy choice in these very specific circumstances. However, the intensity of affective experiences was strongly predicted by both positive and negative anticipation.
+
+```{r Results, warning=FALSE}
+results <- c(results, 
+             report::report(lm(PropDist ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl)),
+             report::report(lm(Intense.pmean.z ~ Pos.Anticipate + Neg.Anticipate + Fear.Before, data = df_pl)))
+```
+
+## Do Motivations Influence Strategy Choice?
+
+Similarly, the motivation one enters the haunted house for might influence their experience as well.
+
+```{r Motivation Models}
+for (i in grep(names(df_pl), pattern = "Motive")){
+  df_pl[,i] <- as.numeric(df_pl[,i])
+
+}
+model1 <- lm(PropDist ~ Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored, data = df_pl)
+confint(model1)
+summary(model1)
+model2 <- lm(Intense.pmean.z ~ Motive.Payment + Motive.Thrill + Motive.Novelty + Motive.Challenge + Motive.Peers + Motive.Science + Motive.Bored, data = df_pl)
+summary(model2)
+```
+
+It looks like the motivation behind participating in the study did no have a significant effect upon strategy choice. Even in the case of boredom the effect size was negligible.
+
+```{r Results, warning=FALSE}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+## How Do Attitudes About Fear and Haunted Houses Influence Regulation?
+
+We assessed the extent to which people enjoy fear and haunted houses. I have a suspicion that they'll be pretty strongly correlated.
+
+```{r Overlap in Constructs}
+(model <- cor.test(df_all$HH.Enjoy, 
+                   df_all$Fear.Enjoy,
+                   use = "everything"))
+```
+
+and we find that to be the case.
+
+```{r Results}
+results <- c(results, 
+             report::report(model))
+```
+
+We aren't really finding anything significant in the main effects models, a little bit of `fear.during` predicting the average itensity participants report. 
+
+```{r Attitudes Towards Haunted Houses and Fear Models}
+summary(lm(PropDist ~ HH.Enjoy + Fear.Enjoy + Fear.During, data = df_pl))
+confint(lm(PropDist ~ HH.Enjoy + Fear.Enjoy + Fear.During, data = df_pl))
+summary(lm(Intense.pmean.z ~ HH.Enjoy + Fear.Enjoy + Fear.During, data = df_pl))
+```
+
+However, we are finding a pretty notable interaction between how much someone enjoys fear and their fear during the haunted house upon how intense their emotions were. While this demonstrates no predictive utility towards strategy again, it could constitute an important covariate to our predictor. 
+
+```{r Follow Up Fear Model}
+model1 <- lm(PropDist ~ HH.Enjoy + Fear.Enjoy * Fear.During, data = df_pl)
+summary(model1)
+model2 <- lm(Intense.pmean.z ~ HH.Enjoy + Fear.Enjoy * Fear.During, data = df_pl)
+summary(model2)
+```
+
+```{r Results, warning=FALSE}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+## How Do Conventional Demographics Influence Regulation?
+
+A sizeable proportion of literature finds that men use suppression more often and reappraisal usage increases with age. We're going to see whether we have cause for concern with these variables in our dataset. It should be noted that we likely do not have enough older adults to really see the effects I mentioned. 
+
+We are actually seeing a slightly negative effect between being male and have a more intense experience, but again, nothing to our outcome variable. 
+
+```{r Follow Up Demographics Model}
+model1 <- lm(PropDist ~ Age + Sex, data = df_pl)
+summary(model1)
+confint(model1)
+model2 <- lm(Intense.pmean.z ~ Age + Sex, data = df_pl)
+summary(model2)
+```
+
+```{r Results, warning=FALSE}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+## How does the presence of peers influence Regulation?
+
+We find no difference in intensity or our outcome variable between individuals who knew others in their group and who did not know others in their group. 
+
+```{r Follow Up Peer Presence Models}
+(model1 <- t.test(df_pl$PropDist[df_pl$Peer.Presence == "Yes"],
+                  df_pl$PropDist[df_pl$Peer.Presence == "No"]))
+(model2 <- t.test(df_pl$Intense.pmean.z[df_pl$Peer.Presence == "Yes"],
+                  df_pl$Intense.pmean.z[df_pl$Peer.Presence == "No"]))
+```
+
+```{r Results}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+## How do various other individual difference measures influence Regulation?
+
+Here, we're going to test a bevy of other validated individual difference measures to see if *anything* is correlating with our outcome and constituting a concerning covariate. 
+
+```{r Identifying columns containing covariate data}
+cols <- c(which(names(df_pl) == "BDI_Total"):which(names(df_pl) == "IRQ_PE"))
+```
+
+```{r Correlating Individual Differences With Predictor}
+# Iterating through each of our potential covariates
+for (VAR in 1:(length(cols))){
+  
+  # Pulling up our outcome variable 
+  item <- df_pl[,which(names(df_pl) == "Intense.pmean.z")] %>%
+          # Converting the data to numeric from double
+          unlist() %>%
+          # Running a correlation test between the covariate and outcome
+          cor.test(x = .,
+                   y = df_pl[,cols[VAR]],
+                   use = "pairwise.complete.obs")
+  
+  # If the given correlation is significant
+  if (item$p.value < 0.05){
+    # Report the statistics
+    print(paste0(names(df_pl)[cols[VAR]], 
+                 " demonstrates a significant association to our outcome variable (t = ",
+                 round(item$statistic, 3), ", r = ", round(item$estimate, 3), ", p = ", round(item$p.value, 3),")"))
+  }
+
+  # If the given correlation is non-significant  
+  if (item$p.value >= 0.05){
+    #Report the statistics
+    print(paste0(names(df_pl)[cols[VAR]], 
+                 ": NO SIGNIFICANT ASSOCIATION w/ OUTCOME (t = ",
+                 round(item$statistic,3), ", r = ", round(item$estimate,3), ", p = ", round(item$p.value,3),")"))
+  }
+}
+
+# Clean our space 
+rm(item, VAR)
+```
+
+```{r Correlating Individual Differences With Outcomes}
+# Iterating through each of our potential covariates
+for (VAR in 1:(length(cols))){
+  
+  # Pulling up our outcome variable 
+  item <- df_pl[,which(names(df_pl) == "PropDist")] %>%
+          # Converting the data to numeric from double
+          unlist() %>%
+          # Running a correlation test between the covariate and outcome
+          cor.test(x = .,
+                   y = df_pl[,cols[VAR]],
+                   use = "pairwise.complete.obs")
+  
+  # If the given correlation is significant
+  if (item$p.value < 0.05){
+    # Report the statistics
+    print(paste0(names(df_pl)[cols[VAR]], 
+                 " demonstrates a significant association to our outcome variable (t = ",
+                 round(item$statistic, 3), ", r = ", round(item$estimate, 3), ", p = ", round(item$p.value, 3),")"))
+  }
+
+  # If the given correlation is non-significant  
+  if (item$p.value >= 0.05){
+    #Report the statistics
+    print(paste0(names(df_pl)[cols[VAR]], 
+                 ": NO SIGNIFICANT ASSOCIATION w/ OUTCOME (t = ",
+                 round(item$statistic,3), ", r = ", round(item$estimate,3), ", p = ", round(item$p.value,3),")"))
+  }
+}
+
+# Clean our space 
+rm(item, VAR, cols)
+```
+
+## How does date, time, or group influence Regulation?
+
+Lastly, we're going to explore the influence of variance time factors, like which group people were in, which time they entered the haunted house, and the dates on which they did. 
+
+```{r Running an ANOVA to test the effect of Time}
+model1 <- aov(PropDist ~ Time_HH, data=df_pl)
+summary(model1)
+model2 <- aov(Intense.pmean.z~ Time_HH, data=df_pl)
+summary(model2)
+```
+
+```{r Results, warning=FALSE, warning=FALSE}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+```{r Running an ANOVA to test the effect of date}
+model1 <- aov(PropDist ~ Date_HH, data=df_pl)
+summary(model1)
+model2 <- aov(Intense.pmean.z~ Date_HH, data=df_pl)
+summary(model2)
+```
+
+```{r Results, warning=FALSE, warning=FALSE}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+```{r Running an ANOVA to test the effect of group}
+model1 <- aov(PropDist ~ Group, data=df_pl)
+summary(model1)
+model2 <- aov(Intense.pmean.z~ Group, data=df_pl)
+summary(model2)
+```
+
+```{r Results, message=FALSE, warning=FALSE}
+results <- c(results, 
+             report::report(model1),
+             report::report(model2))
+```
+
+
+# Primary Analyses
+
+As mentioned within the pilot script, I think I need to be as charitable to the hypothesis that intensity will predict strategy as possible. Thus I will test this relationship in as many ways as I can theoretically justify to find the exact conditions in which it makes sense. All of these analyses will be using hierarchical binary logistic regression. I've covered why that's important and my approach to it in the pilot script as well, so I won't overwhelm you, brave reviewer, with fine-grained details. Broadly, in each case, I am taking an information criterion approach and adopting the model that best fits the data as determined via chi-square model comparison of AIC values. These models will be built iteratively from a null model featuring only random effects and will stop once an iteration fails to perform better than the model before. The one exception to this rule is that I will always test the full model with covariates included since that is what I originally hypothesized and pre-registered. 
+
+## Application of Engagement/Disengagement Strategies with Positive and Negative Emotions
+
+We are starting off with the broadest inclusion criteria, so we're including all observations in which an engagement or disengagement strategy was used for an emotional experience, whether it was positive or negative. This might include *too* much variance, but again, I want to make as few assumptions as possible in testing these models and let the data speak for itself.
+
+We're starting by subsetting the relevant variables and data
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Disengage),
+             select = c("Disengage", "PID", "Intense", 
+                        "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+Now I'm printing summary statistics
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Disengagement cases:", length(which(df$Disengage == 1)))
+paste("Number of Engagement cases:", length(which(df$Disengage == 0)))
+```
+
+Now I'm constructing a null model without fixed effects, constructing two models that approach the question from a person-centered and non-person-centered approach, and a final model that includes covariates.
+
+```{r Affective Intensity Models}
+m0 <- glmer(Disengage ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Disengage  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Disengage  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Disengage  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+Then, I'm testing the ICC value of my null model to examine whether using a hierarchical approach can be justified both theoretically *and* via the data generated (Again, discussed in my script for the pilot, but we ideally want to see an ICC > 0.0). Then I'm testing both of my models against the null model to see whether they explain a greater degree of variance while adjusting for the number of predictors than does the null model. I explained this in the pilot script also, but we ideally never want to compare a model with *n* terms to any other model with *n+2* or *n-2* terms. This would generally be an inappropriate comparison because comparing models with such vastly different term quantities would be a little like apples to oranges and would mask *why* one model performs better than the other. However, `m2` in this case is effectively the same predictor used in `m1` just divorced into two separate components. We are not explaining any more variance by introducing a separate term; we're just examining whether the relationship between the predictor and the outcome changes if we arrange it in a slightly more subjective way. As such, I think such an approach is justified in this instance.  
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+Following model comparison, we generate a results table...
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+and calculate our effect size and confidence intervals
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.052)
+exp(0.538)
+
+exp(fixef(mcov))
+exp(-0.068)
+exp(0.548)
+```
+
+Again, we're going to repeat this process throughout so I'm going to scale back the commentary
+
+
+## Application of Engagement/Disengagement Strategies with Negative Emotions
+
+Now, we're going to narrow our scope a tiny bit and see if the relationship emerges when we only examine negative emotions. This more closely mirrors what we see in most lab studies, which tend to care about hedonic responses to negative emotions (i.e., reducing them). We're not quite at downregualtion yet, though. 
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Disengage) &
+             df_sub$Valence < 0.5,
+             select = c("Disengage", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Disengagement cases:", length(which(df$Disengage == 1)))
+paste("Number of Engagement cases:", length(which(df$Disengage == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Disengage ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Disengage  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Disengage  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Disengage  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.161)
+exp(0.488)
+
+exp(fixef(mcov))
+exp(-0.185)
+exp(0.494)
+```
+
+## Application of Reappraisal/Distract Strategies with Positive and Negative Emotions
+
+Now we're narrowing things a little bit further in that we aren't examining the contrast between engagement and disengagement strategies, but instead specifically between reappraisal and distraction, which are the two specific strategies that are most commonly compared in the aforementioned lab studies. 
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Distracted),
+             select = c("Distracted", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Distracted cases:", length(which(df$Distracted == 1)))
+paste("Number of Engagement cases:", length(which(df$Distracted == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Distracted ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Distracted  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Distracted  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Distracted  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(0.025)
+exp(0.683)
+
+exp(fixef(mcov))
+exp(0.028)
+exp(0.719)
+```
+
+## Application of Reappraisal/Distract Strategies with Negative Emotions
+
+Now we're going to narrow this further by specifically looking at reappraisal and distraction within negative emotions only. 
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Distracted) &
+             df_sub$Valence < 0.5,
+             select = c("Distracted", "Distracted_cat", "PID", "Intense", "EmoMod", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess", "RegSuccess.z"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Distracted cases:", length(which(df$Distracted == 1)))
+paste("Number of Engagement cases:", length(which(df$Distracted == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Distracted ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Distracted  ~ Intense + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Distracted  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Distracted  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.056)
+exp(0.668)
+
+exp(fixef(mcov))
+exp(-0.052)
+exp(0.689)
+```
+
+
+```{r Visualizing Affective Models}
+m1.e <- effect("Intense",m1,xlevels=list(Intense=seq(range(df$Intense)[1],
+                                                       range(df$Intense)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Intense, y=fit)) +
+  geom_jitter(data = df, aes(x=Intense, y=Distracted, 
+                             color = as.factor(Distracted)), 
+              width = 0.15, height = 0.025, size = 3.5) +
+  geom_line(color = "Black", size = 4.5) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  scale_x_continuous("Emotion Intensity") +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  coord_cartesian(xlim = c(0, 4), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black"))  
+plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  tiff(paste0(Plots, "Fig3.tiff"),       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  plot
+  dev.off()
+```
+
+```{r}
+  Plot <- ggplot(data = df, aes(x = df$Intense, y = RegSuccess, color = df$Distracted_cat)) +
+  stat_smooth(method = "lm",size = 4.5) +
+  scale_color_discrete("Strategy") +
+  labs(x = "Emotion Intensity",
+       y ="Regulation Success") +
+  coord_cartesian(ylim=c(0, 4)) +
+  theme_classic() +  
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black"))  
+  Plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  tiff("C:/Users/Administrator/Documents/GitHub/fright_night_study/plots/Fig4.tiff",       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  Plot
+  dev.off()
+```
+
+
+## Application of Engagement/Disengagement Strategies with Positive and Negative Emotions During Immediate Recall
+
+You can see the title above; you get the picture. Immediate recall refers to those events that were recalled for the first time *right* after leaving the haunted house, rather than at the follow up some days later.  
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Disengage) &
+             df_sub$Timing == "ImmReg",
+             select = c("Disengage", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Disengagement cases:", length(which(df$Disengage == 1)))
+paste("Number of Engagement cases:", length(which(df$Disengage == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Disengage ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Disengage  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Disengage  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Disengage  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.350)
+exp(0.477)
+
+exp(fixef(mcov))
+exp(-0.427)
+exp(0.457)
+```
+
+## Application of Engagement/Disengagement Strategies with Negative Emotions During Immediate Recall
+
+Now we're specifically going to look at negative emotions in that context ...
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Disengage) &
+             df_sub$Valence < 0.5 &
+             df_sub$Timing == "ImmReg",
+             select = c("Disengage", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Disengagement cases:", length(which(df$Disengage == 1)))
+paste("Number of Engagement cases:", length(which(df$Disengage == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Disengage ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Disengage  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Disengage  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Disengage  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.353)
+exp(0.518)
+
+exp(fixef(mcov))
+exp(-0.427)
+exp(0.516)
+```
+
+##  Application of Reappraisal/Distract Strategies with Positive and Negative Emotions During Immediate Recall
+
+And we're going to finish off with just reappraisal and distraction in that context. 
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Distracted) &
+             df_sub$Timing == "ImmReg",
+             select = c("Distracted", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Distracted cases:", length(which(df$Distracted == 1)))
+paste("Number of Engagement cases:", length(which(df$Distracted == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Distracted ~ 1 + (1 | PID), data = df, family = binomial)
+m1 <- glmer(Distracted  ~ Intense.z + (1 | PID), data = df, family = binomial)
+m2 <- glmer(Distracted  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial)
+mcov <- glmer(Distracted  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.232)
+exp(0.697)
+
+exp(fixef(mcov))
+exp(-0.244)
+exp(0.749)
+```
+
+## Application of Reappraisal/Distract Strategies with Negative Emotions During Immediate Recall
+
+```{r Creating a Subset of Data}
+df <- subset(df_sub, 
+             !is.na(df_sub$Distracted) &
+             df_sub$Valence < 0.5 &
+             df_sub$Timing == "ImmReg",
+             select = c("Distracted", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+```
+
+```{r Printing Details}
+paste("Number of Participants:", length(unique(df$PID)))
+paste("Number of Events:", nrow(distinct(subset(df, select = c("PID", "Timing", "EventNum")))))
+paste("Number of Immediate Events:", nrow(distinct(subset(df, df$Timing == "ImmReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Familiar Recall Events:", nrow(distinct(subset(df, df$Timing == "MemReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Novel Recall Events:", nrow(distinct(subset(df, df$Timing == "DelReg", select = c("PID", "Timing", "EventNum")))))
+paste("Number of Distracted cases:", length(which(df$Distracted == 1)))
+paste("Number of Engagement cases:", length(which(df$Distracted == 0)))
+```
+
+```{r Affective Intensity Models}
+m0 <- glmer(Distracted ~ 1 + (1 | PID), data = df, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+m1 <- glmer(Distracted  ~ Intense.z + (1 | PID), data = df, family = binomial,control = glmerControl(optimizer = "bobyqa"))
+m2 <- glmer(Distracted  ~ Intense.pc.z + Intense.pmean.z + (1 | PID), data = df, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+mcov <- glmer(Distracted  ~ Intense.z + Fear.Before + Fear.Enjoy + ERQ_CogReap + (1 | PID), data = df, family = binomial, control = glmerControl(optimizer = "bobyqa"))
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0)
+anova(m0, m1)
+anova(m0, m2)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(mcov) <- "lmerMod"
+stargazer(m0,m1,m2,mcov,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Null Model", "Model 1", "Model 2"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Affective Intensity (Person-Centered, z)", 
+                               "Affective Intensity (Person-Mean)", "Fear Expectation" , "Fear Enjoy" , 
+                               "ERQ (Reappraisal)" , "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(fixef(m1))
+exp(-0.211)
+exp(0.739)
+
+exp(fixef(mcov))
+exp(-0.261)
+exp(0.824)
+```
+
+```{r}
+# Install the multcomp package if you haven't already
+install.packages("multcomp")
+library(multcomp)
+
+df_motive <- df_pl[,c(1,3:9)] %>%
+  pivot_longer(cols = starts_with("Motive"),values_to = "Value",names_to = "Motives")
+
+df_motive$Motives <- as.factor(df_motive$Motives)
+
+aov <- aov(Value ~ Motives, data = df_motive)
+summary(aov)
+
+# Define contrasts (here's an example for three groups)
+contrasts <- matrix(c(-1, 0, 0, 0, 0, 0, 1,  # contrast 1: group 1 vs. groups 2 & 3
+                    0, -1, 0, 0, 0, 0, 1,
+                    0, 0, -1, 0, 0, 0, 1,
+                    0, 0, 0, -1, 0, 0, 1,
+                    0, 0, 0, 0, -1, 0, 1,
+                    0, 0, 0, 0, 0, -1, 1,
+                    -1, -1, -1, -1, -1, -1, 6), # contrast 2: group 2 vs group 3
+                    byrow = TRUE, nrow = 7)
+
+# Apply the contrasts using glht
+comparison <- glht(aov, linfct = mcp(Motives = contrasts))
+
+# Adjust p-values using Bonferroni method and display the results
+summary(comparison, test = adjusted("bonferroni"))
+
+```

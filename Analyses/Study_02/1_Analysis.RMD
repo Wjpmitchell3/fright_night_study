@@ -1,0 +1,523 @@
+---
+title: "ER Choice v. Usage - Study 2 Analysis"
+author: "W.J. Mitchell"
+date: "`r Sys.Date()`"
+output:  html_document
+---
+
+NAVIGATION / QUESTIONS:
++ In previous analyses and reviews of our haunted house data set, we've found that affective intensity predicted regulation extent, but not regulation strategy choice. This is what I expected to find, but it's in contradiction with the vast amount of lab research which finds some massive associations between choice and intensity (on the magnitude of r+ = 0.65 - 0.80). If that were the case, power analyses suggested even 20 people should have been enough to demonstrate the relationship. Importantly, we were not decontextualizing or isolating our stimuli of interest, which many lab studies understandably and necessarily do. What we wanted to see with this experiment is whether decontextualizing the experiences of people who previously showed no choice-intensity relationships introduces the lab-supported patterns.
+
+PREDICTIONS:
++ We predict that as affective intensity increases, forecasters, or people who are predicting what they would do in the given situation but had not experienced it, will be more likely to select distraction over reappraisal. We hope that this relationship holds up even after accounting for important individual difference measures like ERQ. 
+
+ISSUES:
++ During initial collection, participants were asked the extent to which they had felt a specific emotion and during the follow up, the emotion ratings the original participants provided were presented as emotional intensity, rather than emotional extent.
+
+NOTES:
+
+# SCRIPT START 
+
+Specifying our package usage
+
+```{r Packages I Use}
+  # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
+  # Loading in my packages with my pacman manager
+  pacman::p_load(effects, 
+                 here,
+                 lme4, 
+                 performance, 
+                 psych, 
+                 stargazer, 
+                 tidyverse)
+```
+
+Indicating how I want numbers presented and formatted
+
+``` {r Number Formatting}
+  options(scipen=100)
+  options(digits=3)
+  options(tinytex.verbose = TRUE)
+```
+  
+The `here()` function should ideally Tidentify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
+```{r Setting Working Directories}
+  # Identifying our main directory
+  # WorkDir <- here::here()
+    WorkDir <- "C:/Users/Administrator/Documents/GitHub/fright_night_study"
+
+  # Identifying specific directories to read and write from
+  Import <- paste0(WorkDir, "/data/Study_02/Raw/")
+  Plots <- paste0(WorkDir, "/plots/")
+```
+
+## LOADING THE ORIGINAL (EXPERIENCER) DATA 
+  
+Loading in our data
+  
+```{r Loading experiencer dataframe}
+  df.og <- read.csv(file = paste0(WorkDir, "/data/Pilot/Deriv/df_subset.csv"), 
+                    header = T, 
+                    sep=",", 
+                    stringsAsFactors = T,
+                    na.strings=c("","NA", "N/A"),
+                    row.names = 1)
+```
+
+Assessing how many observations, events, etc. we have in this dataset.
+
+```{R Summaries}
+paste("Observations:", nrow(df.og))
+paste("Unique Events:", nrow(unique(df.og[,c('PID.OG', 'Event')])))
+paste("Average Number of Emotions Per Event:", round(nrow(df.og)/nrow(unique(df.og[,c('PID.OG', 'Event')])),2))
+paste("Total Number of Participants:", nrow(distinct(subset(df.og, select = c("PID.OG")))))
+paste("Total Number of Reappraisal Events:", nrow(distinct(subset(df.og, df.og$Strategy.OG == "Reappraisal" , select = c("Strategy.OG", "Event")))))
+paste("Total Number of Distraction Events:", nrow(distinct(subset(df.og, df.og$Strategy.OG== "Distraction" ,select = c("Strategy.OG", "Event")))))
+```
+
+## LOADING THE FOLLOW UP (PREDICTOR) DATA 
+
+Loading in our follow up data (both observation level and person level) from the OG experiencers.
+
+```{r Loading standard dataframe}
+  df.fu <- read.csv(file = paste0(Import, "df.csv"), 
+                    header = T, 
+                    sep=",", 
+                    stringsAsFactors = T,
+                    na.strings=c("", "NA", "N/A"),
+                    row.names = 1)
+```
+
+```{r Loading person level dataframe}
+  df.fu.pl <- read.csv(file = paste0(Import, "df_personlevel.csv"), 
+                    header = T, 
+                    sep=",", 
+                    stringsAsFactors = T,
+                    na.strings=c("","N/A", "NA", "NaN"),
+                    row.names = 1)
+```
+
+# QUALITY ASSURANCE CHECK 
+
+## Limited Access to Regulation Strategies
+
+```{r Removing NAs}
+df.fu <- subset(df.fu, 
+                !is.na(df.fu$PID.FU))
+```
+
+Individuals who score high on the DERS 5th subscale may present an issue for our data, so I'd like to assess the prominence of those individuals in the dataset. 
+
+```{r Assessing the distributions of emotions}
+df.fu.pl$group <- "Participants"
+ggplot(data = df.fu.pl, aes(x = group, y = DERS.LimitAccess.FU)) + 
+       theme_classic()+
+       labs(x ="") +
+       geom_jitter(aes(alpha=0.2, color = group),shape=16, position=position_jitter(0.2)) + 
+       geom_violin(trim=F, alpha=0.5) +
+       ylab("DERS - Limited Access to ER Strategies Subscale") +
+       theme(legend.position="none") +
+       geom_boxplot(width=0.2, color="black", alpha=0.2)
+```
+
+We're not really seeing a lot of strong evidence for high DERS Limited Access individuals within this dataset. Most participants are well within 2 standard deviations of the mean [(m = 19.67, sd = 7.31)](https://novopsych.com.au/assessments/formulation/difficulties-in-emotion-regulation-scale/), which falls short of clinical significance. 
+
+## Broader Individual Difference Scores
+
+It's reasonable to expect that individuals who are more different from each other in a few key constructs (i.e., regulation tendencies, uncertainty responses) would also be more different from each other in regulation choices. Now, we don't quite directly care about these constructs, but if the two samples are dramatically different, it would call into question the veracity of our claims or maybe more specifically our ability to attribute the differences in regulation strictly to differences in emotional intensity. So, ideally, I want to see that the two groups show no differences in there constructs overall. 
+
+I'm starting by constructing a dataframe for these analyses specifically.
+
+```{r Creating a person level dataframe for the og dataset}
+df.og.pl <- subset(df.og, select= c("PID.OG", "ERQ_Reapp.OG", "ERQ_Supp.OG", "IUS.OG")) %>%
+            distinct()
+```
+
+Then I'm running the first t-test for reappraisal tendencies.
+
+```{r Comparing ERQ Reapp}
+test<- t.test(x=df.og.pl$ERQ_Reapp.OG, y = df.fu.pl$ERQ_Reapp.FU,alternative = "two.sided",paired = F, var.equal = F)
+```
+
+I think it's less relevant since suppression is only a secondary interest, but we'll also compare differences in suppression tendencies.
+
+```{r Comparing ERQ Suppress}
+test <- t.test(x=df.og.pl$ERQ_Supp.OG, y = df.fu.pl$ERQ_Supp.FU,alternative = "two.sided",paired = F,var.equal = F)
+```
+
+Lastly, we'll compare uncertainty intolerance, since it's demonstrated a consistent association to regulation strategy choice.
+
+```{r Comparing IUS}
+test <- t.test(x=df.og.pl$IUS.OG, y = df.fu.pl$IUS.FU,alternative = "two.sided",paired = F,var.equal = F)
+```
+
+The two samples do not differ significantly by ERQ Reappraisal scores (xexp = 29.9 xfor= 31.0, 95% CI = [-3.22, 1.03] t(45) = -1, p = 0.3) or IUS scores (xexp = 33.6 xfor= 34.3, 95% CI= [-7.07, 5.59], t(35) = -0.2, p = 0.8) . However, significant differences were observed between the two groups for the expressive suppression ERQ subscale (xexp = 12.5, xfor = 15.7, t(48) = -3, p < 0.001). Neither scale was associated with strategy usage in the Pilot.  
+
+# AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION  
+
+Whenever we want to examine the extent to which a continuous numeric variable predicts one of two possible outcomes, the appropriate test is a binary logistic regression (as opposed to a linear regression). Here, we're restructuring our data to factors and numeric to fit that approach. Then we're subsetting observations that aren't missing key information. 
+
+```{r Restructuing Variables}
+df.fu$Strategy.FU <- as.factor(df.fu$Strategy.FU) %>%
+                     relevel(ref = "Reappraisal")
+df.fu$Age <- as.numeric(df.fu$Age)
+df.fu$Gender.Identity <- as.factor(df.fu$Gender.Identity)
+df.fu$IUS_F2.FU <- as.numeric(df.fu$IUS_F2.FU)
+df.fu$Accurate <- as.numeric(df.fu$Accurate)
+df.fu$DERS.LimitAccess.FU <- as.numeric(df.fu$DERS.LimitAccess.FU)
+df.fu <- subset(df.fu, !is.na(df.fu$Strategy.FU) &
+                        !is.na(df.fu$Age) & 
+                        !is.na(df.fu$Gender.Identity) &
+                        !is.na(df.fu$IUS_F2.FU))
+```
+
+This appraoch will again mirror previous hierarchical binary logistic regressions (See Pilot and Study 1), so I will specifically comment upon places where we deviate. In this case, we're deviating slightly in our random effects because we could reasonably expect there to be an effect of the forecaster and the experiencer (an individual might have regulation tendencies or influences that bias them to using one strategy independnent of the effects of emotion intensity in either case). 
+
+```{r Mixed Effect Logistic Regression Model - NULL}
+m0 <- glmer(Strategy.FU ~ 1 + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+icc(m0)
+```
+
+We're finding that the combined effect of experiencer and forecaster is explaining a reasonable degree of the variance and now we're carefully construct our models using z-standardized emotion. Notice we cannot use person centered emotion here, since emotion now becomes a feature of the stimulus, rather than an item self-reported by the participant. 
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1 <- glmer(Strategy.FU ~ Emo.Extent.z + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+m2 <- glmer(Strategy.FU ~ Emo.Extent.z + Age + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+m3 <- glmer(Strategy.FU ~ Emo.Extent.z + Gender.Identity + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+m4 <- glmer(Strategy.FU ~ Emo.Extent.z + IUS.FU + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+m5 <- glmer(Strategy.FU ~ Emo.Extent.z + DERS.LimitAccess.FU + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+m6 <- glmer(Strategy.FU ~ Emo.Extent.z + Age + Gender.Identity + IUS.FU + DERS.LimitAccess.FU + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
+```
+
+We're finding that our first model is the only model that fits the data better than the null, so we're going to adopt it as our primary model. 
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+anova(m1, m3)
+anova(m1, m4)
+anova(m1, m5)
+anova(m1, m6)
+```
+
+Generating a table to organize the output and compare across models. 
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(m3) <- "lmerMod"
+class(m4) <- "lmerMod"
+class(m5) <- "lmerMod"
+class(m6) <- "lmerMod"
+stargazer(m0,m1,m2, m3,m4,m5, m6,
+          type = "text", 
+          title= "Intensity Predicting Regulation", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6"),
+          dep.var.labels = "Strategy Selection", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Age", 
+                               "Gender, Male", 
+                               "Gender, Non-Binary", 
+                               "IUS, Factor 2", 
+                               "DERS Limited Access to Strategies", 
+                               "Intercept"), ci = T,
+          notes = "")
+```
+
+Calculating our primary effect size in terms of odds ratio and the confidence interval around it. 
+
+```{r Converting Beta to an Odds Ratio}
+exp(fixef(m1))
+exp(0.017)
+exp(0.091)
+```
+
+Generating a visualization of this effect using `ggplot`. 
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1.e <- effect("Emo.Extent.z",m1,xlevels=list(Emo.Extent.z=seq(range(df.fu$Emo.Extent.z)[1],
+                                                       range(df.fu$Emo.Extent.z)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Emo.Extent.z, y=fit)) +
+  geom_jitter(data = df.fu, aes(x=Emo.Extent.z, y=Strategy.FU_num, 
+                                color=as.factor(Strategy.FU_num)), 
+              width = 0.25, height = 0.035, size = 1, alpha = 0.10) +
+  geom_line(color = "Black", size = 4.5) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  scale_x_continuous("Emotion Intensity (z)", breaks = round(seq(range(df.fu$Emo.Extent.z)[1],
+                                                         range(df.fu$Emo.Extent.z)[2], 
+                                                         (range(df.fu$Emo.Extent.z)[2] - range(df.fu$Emo.Extent.z)[1])/6),0)) +
+  scale_y_continuous("Probability of Choosing Distraction", breaks = seq(0,1,0.20)) +
+  scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+  coord_cartesian(xlim = c(range(df.fu$Emo.Extent.z)[1],
+                           range(df.fu$Emo.Extent.z)[2]), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black"))  
+plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  tiff(paste0(Plots, "Fig8.tiff"),       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  plot
+  dev.off()
+  rm(plot, m0, m1, m2, m3, m1.e)
+```
+
+# AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION AT EVENT LEVEL (MEAN)
+
+Once again,the way that we had originally collected data in the pilot means that there are at least a few levels of granularity through which we can view this data. We just calculated it at the level of observation (i.e., showing a participant an event, the emotions and their respective intensities, having them choose one strategy to regulate the event, and then calculating the association between that choice and the intensity of those emotions individually). However, it might be more reasonable to calculate the association at the event-level (i.e., calculating the association between the regulation choice and the average intensity of emotions contained within an event). I'm agnostic as to which approach is best, so just like we had in the pilot, I'm going to see whether the association maintains when we look at the data this way. 
+
+I'm generating a dataframe here that removes the observation-specific variables and then removes duplicate rows, leaving us with only one row per event-forecaster combo with the average values for that event. 
+
+```{r Subsetting event level data}
+df_temp <- df.fu %>%
+           .[,-which(names(.) %in% c("Emotion", "Emo.Extent", "Emo.Extent.z",
+                                     "Reg.Extent", "Reg.Extent.z", "Emo.Extent.pc.z"))] %>%
+           distinct()
+```
+
+Generating our null model ...
+
+```{r Mixed Effect Logistic Regression Model - NULL}
+m0 <- glmer(Strategy.FU ~ 1 + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+icc(m0)
+```
+
+We find slightly less explanatory power
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+# Some of these models may fail to converge and that's okay. We won't even get to those later failed-to-converge models anyway. 
+m1 <- glmer(Strategy.FU ~ Emo_Mean.z + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m2 <- glmer(Strategy.FU ~ Emo_Mean.z + Age + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m3 <- glmer(Strategy.FU ~ Emo_Mean.z + Gender.Identity + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m4 <- glmer(Strategy.FU ~ Emo_Mean.z + IUS_F2.FU + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m5 <- glmer(Strategy.FU ~ Emo_Mean.z + DERS.LimitAccess.FU + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m6 <- glmer(Strategy.FU ~ Emo_Mean.z + Age + Gender.Identity + IUS_F2.FU + DERS.LimitAccess.FU + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+```
+
+We actually see a little movement in our model including gender, but it ultimately fails to perform better than model 1 again. 
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+anova(m1, m3)
+anova(m1, m4)
+anova(m1, m5)
+anova(m1, m6)
+```
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(m3) <- "lmerMod"
+class(m4) <- "lmerMod"
+class(m5) <- "lmerMod"
+class(m6) <- "lmerMod"
+stargazer(m0,m1,m2, m3,m4,m5, m6,
+          type = "text", 
+          title= "Intensity Predicting Regulation", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6"),
+          dep.var.labels = "Strategy Selection", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)", "Age",                                      "Gender, Male", "Gender, Non-Binary", "IUS, Factor 2", "DERS Limited Access to Strategies", "Intercept"), ci = T,
+          notes = "")
+```
+
+Our odds ratio actually increases slightly with this approach, but I'm choosing to report the more conservative one in the paper because I think it makes fewer assumptions about the relationship between these emotions within a given experience. 
+
+```{r Converting Beta to an Odds Ratio}
+exp(fixef(m1))
+exp(0.061)
+exp(0.171)
+```
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1.e <- effect("Emo_Mean.z",m1,xlevels=list(Emo_Mean.z=seq(range(df_temp$Emo_Mean.z)[1],
+                                                       range(df_temp$Emo_Mean.z)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Emo_Mean.z, y=fit)) +
+  geom_jitter(data = df_temp, aes(x=Emo_Mean.z, y=Strategy.FU_num, color=Strategy.FU_num), size = 0.1, alpha = 0.1, width = 0.5, height = 0.025) +
+  geom_line(color = "Black", size = 1.5) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  labs(title = "Emotion Intensity Predicts Strategy Choice",
+       subtitle = ("OR = 1.123 **")) +
+  scale_x_continuous("Emotion Intensity (event average, z)", breaks = round(seq(range(df_temp$Emo_Mean.z)[1],
+                                                         range(df_temp$Emo_Mean.z)[2], 
+                                                         (range(df_temp$Emo_Mean.z)[2] - range(df_temp$Emo_Mean.z)[1])/6),0)) +
+  scale_y_continuous("Probability of Choosing Strategy", breaks = seq(0,1,0.2), labels = c("Reappraisal","0.2","0.4","0.6","0.8", "Distraction")) +
+  coord_cartesian(xlim = c(range(df_temp$Emo_Mean.z)[1],
+                           range(df_temp$Emo_Mean.z)[2]), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+  theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
+  theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
+  theme(axis.title = element_text(size = 10)) +
+  theme(axis.text.x = element_text(size = 10, color = "Black")) +
+  theme(axis.text.y = element_text(size = 10, color = "Black")) 
+plot
+```
+
+# AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION AT EVENT LEVEL (SUM)
+
+Lastly, I'm going to explore this effect if we were to sum emotions, which makes an assumption that events with more emotions that are felt more intensely are more intense than events with fewer emotions felt more intensely. I don't personally think I agree with this, but it's another way that I think emotions could be conceptualized so I'll test it just to be safe. 
+
+```{r Mixed Effect Logistic Regression Model - FIXED EFFECT}
+m1 <- glmer(Strategy.FU ~ Emo_Sum.z + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m2 <- glmer(Strategy.FU ~ Emo_Sum.z + Age + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m3 <- glmer(Strategy.FU ~ Emo_Sum.z + Gender.Identity + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m4 <- glmer(Strategy.FU ~ Emo_Sum.z + IUS_F2.FU + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m5 <- glmer(Strategy.FU ~ Emo_Sum.z + DERS.LimitAccess.FU + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+m6 <- glmer(Strategy.FU ~ Emo_Sum.z + Age + Gender.Identity + IUS_F2.FU + DERS.LimitAccess.FU + (1 | PID.FU) + (1 | PID.OG), data = df_temp, family = binomial)
+```
+
+We don't find evidence of an association in this model. 
+
+```{r Model Comparisons}  
+anova(m0, m1)
+anova(m1, m2)
+anova(m1, m3)
+anova(m1, m4)
+anova(m1, m5)
+anova(m1, m6)
+```
+
+```{r Model Outputs}  
+class(m0) <- "lmerMod"
+class(m1) <- "lmerMod"
+class(m2) <- "lmerMod"
+class(m3) <- "lmerMod"
+class(m4) <- "lmerMod"
+class(m5) <- "lmerMod"
+class(m6) <- "lmerMod"
+stargazer(m0,m1,m2, m3,m4, m5, m6,
+          type = "text", 
+          title= "Intensity Predicting Regulation", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6"),
+          dep.var.labels = "Strategy Selection", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          covariate.labels = c("Affective Intensity (z)",  
+                               "Age",                                      
+                               "Gender, Male", 
+                               "Gender, Non-Binary", 
+                               "IUS, Factor 2", 
+                               "DERS Limited Access to Strategies", 
+                               "Intercept"), ci = T,
+          notes = "")
+```
+
+```{r Converting Beta to an Odds Ratio}
+exp(fixef(m1))
+exp(0.008)
+exp(0.049)
+```
+
+```{r Mixed Effect Logistic Regression Model}
+m1.e <- effect("Emo_Sum.z",m1,xlevels=list(Emo_Sum.z=seq(range(df_temp$Emo_Sum.z)[1],
+                                                       range(df_temp$Emo_Sum.z)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot <- ggplot(m1.e, aes(x=Emo_Sum.z, y=fit)) +
+  geom_jitter(data = df_temp, aes(x=Emo_Sum.z, y=Strategy.FU_num, color=Strategy.FU_num), size = 0.1, alpha = 0.1, width = 0.5, height = 0.025) +
+  geom_line(color = "Black", size = 1.5) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  labs(title = "Emotion Intensity Predicts Strategy Choice",
+       subtitle = ("OR = 1.029 **")) +
+  scale_x_continuous("Emotion Intensity (event sum, z)", breaks = round(seq(range(df_temp$Emo_Sum.z)[1],
+                                                         range(df_temp$Emo_Sum.z)[2], 
+                                                         (range(df_temp$Emo_Sum.z)[2] - range(df_temp$Emo_Sum.z)[1])/10),0)) +
+  scale_y_continuous("Probability of Choosing Strategy", breaks = seq(0,1,0.2), labels = c("Reappraisal","0.2","0.4","0.6","0.8", "Distraction")) +
+  coord_cartesian(xlim = c(range(df_temp$Emo_Sum.z)[1],
+                           range(df_temp$Emo_Sum.z)[2]), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+  theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
+  theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
+  theme(axis.title = element_text(size = 10)) +
+  theme(axis.text.x = element_text(size = 10, color = "Black")) +
+  theme(axis.text.y = element_text(size = 10, color = "Black")) 
+plot
+```
+
+# PREDICTORS PREDICTED DISTRACTION MORE FREQUENTLY THAN REAPPRAISAL 
+
+What I am now interested in is seeing whether forecasters match experiencers with even frequency for both strategies. It might be reasonable to suspect there's a big discrepency between how often distraction is used and how often people think they'll use it in this contexts. However, we'd need to find this to be true even after adjusting for distribution differences. 
+
+We're starting by creating our dataframe and restructing our factor variable. 
+
+````{r Designating Rows}
+df_temp <- subset(df.fu.pl, !is.na(df.fu.pl$dprime_Reapp)) %>%
+            pivot_longer(cols = grep(pattern = "dprime_",x = names(df.fu.pl)),
+                         names_to = "Strategy",
+                         names_prefix = "dprime_",
+                         values_to = "DPrime")
+df_temp$Strategy <- df_temp$Strategy %>%
+                    as.factor() %>%
+                    relevel("Distract")
+```
+
+Next we'll run the t-test to see if there are differences in d` values. 
+
+```{r T Test}
+  t.test(x = df_temp$DPrime[df_temp$Strategy == "Reapp"],
+         y = df_temp$DPrime[df_temp$Strategy == "Distract"],
+         paired = T,
+         alternative = "two.sided")
+```
+
+We do indeed find that people are really bad a predicting distraction even adjusting for differences in the frequency with which it's used. 
+
+```{r Assessing the distributions of emotions}
+plot <- ggplot(data = df_temp, aes(x = Strategy, y = DPrime)) + 
+       geom_jitter(aes(alpha=0.8, color=Strategy),shape=16, size = 3,  position=position_jitter(0.2)) + 
+       geom_violin(trim=F, alpha=0.5) +
+       scale_x_discrete(labels = c("Distraction", "Reappraisal")) +
+       scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+       xlab("Matching Strategy") +
+       ylab("D Prime") +
+       theme(legend.position="none") +
+       geom_boxplot(width=0.2, color="black", alpha=0.2) + 
+        theme_classic() +  
+        theme(legend.position = "none") +
+        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
+        theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
+        theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
+        theme(axis.title = element_text(size = 32, color = "Black")) +
+        theme(axis.text.x = element_text(size = 24, color = "Black")) +
+        theme(axis.text.y = element_text(size = 30, color = "Black"))  
+
+
+plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  setwd(Plots)
+    tiff(paste0(Plots, "Fig5.tiff"),       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  plot
+  dev.off()
+  rm(plot)
+```

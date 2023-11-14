@@ -1,0 +1,6 @@
+"Source","Statistic","df1","df2","Test.Comparison","Value","Reported.Comparison","Reported.P.Value","Computed","Raw","Error","DecisionError","OneTail","OneTailedInTxt","APAfactor"
+"2022_Blinded","t",NA,297,"=",0.9,">",0.05,0.368849400501007,"t(297) = 0.9, p > 0.05",FALSE,FALSE,FALSE,FALSE,0.19
+"2022_Blinded","t",NA,57,"=",-3,"=",0.01,0.00399889720768935,"t(57) = -3, p = 0.01",FALSE,FALSE,FALSE,FALSE,0.19
+"2022_Blinded","t",NA,278,"=",-2,">",0.05,0.0464729621317075,"t(278) = -2, p > 0.05",FALSE,FALSE,FALSE,FALSE,0.19
+"2022_Blinded","t",NA,394,"=",6,"<",0.001,4.47401166873055e-09,"t(394)
+= 6, p < 0.001",FALSE,FALSE,FALSE,FALSE,0.19
