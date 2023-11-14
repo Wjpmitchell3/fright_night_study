@@ -31,6 +31,7 @@ NOTES:
                  lattice,
                  lme4, 
                  lmerTest,
+                 multcomp,
                  performance,
                  sjPlot,
                  stargazer, 
@@ -55,8 +56,8 @@ The `here()` function should ideally identify our upper-level project directory.
   WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Import <- paste0(WorkDir, "/../data/Study_01/Raw/")
-  Plots <- paste0(WorkDir, "/../plots/")
+  Import <- paste0(WorkDir, "/Data/Study_01/Raw/")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables")
 ```
 
 # Loading in the data
@@ -64,19 +65,13 @@ The `here()` function should ideally identify our upper-level project directory.
 Once we've loaded in the data, we want to exclude any observations that lack a clear emotion (following lemmatization (i.e., `df$EmoMod`)). 
 
 ```{r Pulling in Dataframe}
-  df <- read.csv(file = "C:/Users/Administrator/Documents/GitHub/fright_night_study/data/Study_01/Raw/df.csv", 
-                 header = T, 
+  df <- read.csv(file = paste0(Import, "df.csv"),
+                 header = T,
                  sep=",",
-                 row.names = 1, 
+                 row.names = 1,
                  stringsAsFactors = F,
                  na.strings=c("","NA", "N/A"))
 
-  # df <- read.csv(file = paste0(Import, "df.csv"), 
-  #                header = T, 
-  #                sep=",",
-  #                row.names = 1, 
-  #                stringsAsFactors = F,
-  #                na.strings=c("","NA", "N/A"))
   df_all <- df %>%
         subset(!is.na(df$EmoMod) &
                df$EmoMod != "" &
@@ -123,14 +118,16 @@ df_sub <- subset(df_all,
              df_all$Timing != "MemReg")
 ```
 
-
 # Constructing a Person-Level Dataframe
 
 Many of the analyses that will follow are going to be looking at person level variables. As such, it is inappropriate to use a criterion variable that exists at the sub-participant level (i.e., we want participant averaged values, like average intensity or proportion of strategies used).
 
 ```{r Constructing a Person level Dataframe}
+# Creating a starting dataframe with a row for each PID and an empty column for strategy proportion
 df_pl <- data.frame("PID" = unique(df_sub$PID),
                     "PropDist" = NA)
+
+# Subsetting which columns we want to keep, removing NA rows, and merging it with the starting dataframe
 df_pl <- subset(df_sub, 
                 !is.na(df_sub$HH.Enjoy) , 
                 select = c("PID", names(df_sub)[grep(names(df_sub), pattern = "Motive")],
@@ -144,6 +141,7 @@ df_pl <- subset(df_sub,
                 by = "PID",
                 all.x = F)
 
+# Calculating the proportion of regulated events in which distraction is used
 for (i in 1:nrow(df_pl)){
   total <- nrow(subset(df_sub, 
                        df_sub$PID == df_pl$PID[i]))
@@ -154,11 +152,8 @@ for (i in 1:nrow(df_pl)){
   }
 }
 
+# Cleaning our space
 rm(i, total, dist)
-```
-
-```{r}
-summary(aov(PropDist ~ Cond, data = df_pl))
 ```
 
 # Possible Covariates
@@ -302,6 +297,44 @@ results <- c(results,
              report::report(model1),
              report::report(model2))
 ```
+
+
+```{r Contrast Dataframes}
+# Creating a dataframe for contrasts
+df_motive <- df_pl[,c(1,3:9)] %>%
+             pivot_longer(cols = starts_with("Motive"),
+                          values_to = "Value",
+                          names_to = "Motives")
+
+# Restructuring our variables
+df_motive$Motives <- as.factor(df_motive$Motives)
+```
+
+```{r Contrast Parent Model}
+
+# Creating an ANOVA model
+aov <- aov(Value ~ Motives, data = df_motive)
+summary(aov)
+```
+
+```{r Contrasts}
+# Define contrasts (here's an example for three groups)
+contrasts <- matrix(c(-1,  0,  0,  0,  0,  0, 1,
+                       0, -1,  0,  0,  0,  0, 1,
+                       0,  0, -1,  0,  0,  0, 1,
+                       0,  0,  0, -1,  0,  0, 1,
+                       0,  0,  0,  0, -1,  0, 1,
+                       0,  0,  0,  0,  0, -1, 1,
+                      -1, -1, -1, -1, -1, -1, 6),
+                    byrow = TRUE, nrow = 7)
+
+# Apply the contrasts using glht
+comparison <- glht(aov, linfct = mcp(Motives = contrasts))
+
+# Adjust p-values using Bonferroni method and display the results
+summary(comparison, test = adjusted("bonferroni"))
+```
+
 
 ## How Do Attitudes About Fear and Haunted Houses Influence Regulation?
 
@@ -816,7 +849,7 @@ plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff("C:/Users/Administrator/Documents/GitHub/fright_night_study/plots/Fig4.tiff",       
+  tiff(paste0(Plots, "Fig4.tiff"),       
        res = 300,
        units = "in",
        width = 12, 
@@ -1072,35 +1105,4 @@ exp(0.739)
 exp(fixef(mcov))
 exp(-0.261)
 exp(0.824)
-```
-
-```{r}
-# Install the multcomp package if you haven't already
-install.packages("multcomp")
-library(multcomp)
-
-df_motive <- df_pl[,c(1,3:9)] %>%
-  pivot_longer(cols = starts_with("Motive"),values_to = "Value",names_to = "Motives")
-
-df_motive$Motives <- as.factor(df_motive$Motives)
-
-aov <- aov(Value ~ Motives, data = df_motive)
-summary(aov)
-
-# Define contrasts (here's an example for three groups)
-contrasts <- matrix(c(-1, 0, 0, 0, 0, 0, 1,  # contrast 1: group 1 vs. groups 2 & 3
-                    0, -1, 0, 0, 0, 0, 1,
-                    0, 0, -1, 0, 0, 0, 1,
-                    0, 0, 0, -1, 0, 0, 1,
-                    0, 0, 0, 0, -1, 0, 1,
-                    0, 0, 0, 0, 0, -1, 1,
-                    -1, -1, -1, -1, -1, -1, 6), # contrast 2: group 2 vs group 3
-                    byrow = TRUE, nrow = 7)
-
-# Apply the contrasts using glht
-comparison <- glht(aov, linfct = mcp(Motives = contrasts))
-
-# Adjust p-values using Bonferroni method and display the results
-summary(comparison, test = adjusted("bonferroni"))
-
 ```

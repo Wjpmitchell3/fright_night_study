@@ -35,8 +35,8 @@ The `here()` function should ideally identify our upper-level project directory.
   WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "/data/Study_02/Raw/")
-  Import <- paste0(WorkDir, "/data/Study_02/Source/")
+  Export <- paste0(WorkDir, "/Data/Study_02/Raw/")
+  Import <- paste0(WorkDir, "/Data/Study_02/Source/")
 ```
 
 #  DATAFRAME CREATION 

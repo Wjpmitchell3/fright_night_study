@@ -41,9 +41,9 @@ The `here()` function should ideally identify our upper-level project directory.
 
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "/data/Study_01/Raw/")
-  Import <- paste0(WorkDir, "/data/Study_01/Source/")
-  Plots <- paste0(WorkDir, "/plots/")
+  Export <- paste0(WorkDir, "/Data/Study_01/Raw/")
+  Import <- paste0(WorkDir, "/Data/Study_01/Source/")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables/")
 ```
 
 # LOADING IN DATA

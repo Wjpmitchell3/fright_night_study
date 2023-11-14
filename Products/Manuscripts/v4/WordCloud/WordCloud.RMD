@@ -1,0 +1,142 @@
+---
+title: "WordCloud"
+author: "Mitchell, W.J."
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+```{r Loading packages}
+pacman::p_load(here,
+               htmlwidgets,
+               RColorBrewer, 
+               tidyverse,
+               webshot,
+               wordcloud,
+               wordcloud2)
+```
+
+```{r Defining Directories}
+dir <- here()
+setwd(dir)
+```
+
+# Study 01
+
+```{r Reading in the data}
+df <- read.csv(paste0(dir, "/df_study1.csv")) %>%
+      subset(., 
+             .$Presence == 1 & .$Emotion != "Other", 
+             select = c("Emotion")) 
+```
+
+```{r Replacing abbreviations with full terms}
+# df$Emotion[df$Emotion == "Alert"] <- "Alert / Attentive"
+# df$Emotion[df$Emotion == "Amuse"] <- "Amused / Interested"
+# df$Emotion[df$Emotion == "Excite"] <- "Excited / Enthused"
+# df$Emotion[df$Emotion == "Aggress"] <- "Hostile / Aggressive"
+# df$Emotion[df$Emotion == "Annoy"] <- "Irritable / Annoyed"
+# df$Emotion[df$Emotion == "Upset"] <- "Upset / Distressed"
+# df$Emotion[df$Emotion == "Nerv"] <- "Nervous / Jittery"
+# df$Emotion[df$Emotion == "Gross"] <- "Disgusted / Grossed Out"
+# df$Emotion[df$Emotion == "Whelm"] <- "Overwhelmed"
+# df$Emotion[df$Emotion == "Panic"] <- "Panicked"
+# df$Emotion[df$Emotion == "Tense"] <- "Tense"
+# df$Emotion[df$Emotion == "Shock"] <- "Shocked / Surprised"
+# df$Emotion[df$Emotion == "Fear"] <- "Fearful / Afraid"
+
+df$Emotion[df$Emotion == "Alert"] <- "Alert"
+df$Emotion[df$Emotion == "Amuse"] <- "Interested"
+df$Emotion[df$Emotion == "Excite"] <- "Excited"
+df$Emotion[df$Emotion == "Aggress"] <- "Hostile"
+df$Emotion[df$Emotion == "Annoy"] <- "Irritable"
+df$Emotion[df$Emotion == "Upset"] <- "Upset"
+df$Emotion[df$Emotion == "Nerv"] <- "Nervous"
+df$Emotion[df$Emotion == "Gross"] <- "Disgusted"
+df$Emotion[df$Emotion == "Whelm"] <- "Overwhelmed"
+df$Emotion[df$Emotion == "Panic"] <- "Panicked"
+df$Emotion[df$Emotion == "Tense"] <- "Tense"
+df$Emotion[df$Emotion == "Shock"] <- "Surprised"
+df$Emotion[df$Emotion == "Fear"] <- "Afraid"
+```
+
+```{r Creating a Frequency Table}
+count <- table(df$Emotion) %>%
+         as.data.frame()
+```
+
+```{r Creating the Word Cloud - Option 1, warning=FALSE}
+set.seed(0)
+
+# Defining how frequently a word should appear in order to appear
+cutoff <- 2
+
+# Generating the cloud 
+cloud <- wordcloud2(data = subset(count, count$Freq >= cutoff),
+                    shape = "circle", 
+                    # maxRotation = 2,
+                    size = 1)
+
+# Visualizing the cloud
+cloud
+```
+
+```{r Exporting}
+saveWidget(cloud,
+           "cloud_study1.html",
+           selfcontained = F)
+webshot("cloud_study1.html", 
+        "cloud_study1.png")
+```
+
+# Study 02
+
+```{r Reading in the data}
+df <- read.csv(paste0(dir, "/df_study2.csv")) %>%
+      .[!is.na(.$EmoMod),] %>%
+      .[,3] %>%
+      as.data.frame()
+```
+
+```{r Renaming the variable}
+colnames(df) <- "Emo"
+```
+
+```{r Changing the variable to a factor so that it can be counted}
+df$Emo <- as.factor(df$Emo)
+```
+
+```{r Creating a frequency table}
+count <- table(df$Emo) %>%
+         as.data.frame()
+```
+
+```{r Creating the Word Cloud - Option 1, warning=FALSE}
+set.seed(2)
+wordcloud(words = count$Var1, 
+          freq = count$Freq, 
+          min.freq = 1, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+```{r Creating the Word Cloud - Option 1, warning=FALSE}
+set.seed(0)
+
+# Defining how frequently a word should appear in order to appear
+cutoff <- 2
+
+# Generating the cloud 
+cloud <- wordcloud2(data = subset(count, count$Freq >= cutoff),
+                    shape = "circle",
+                    size = 0.6)
+
+# Visualizing the cloud
+cloud
+```
+
+```{r Exporting}
+saveWidget(cloud,
+           "cloud_study2.html",
+           selfcontained = F)
+webshot("cloud_study2.html", 
+        "cloud_study2.png")
+```

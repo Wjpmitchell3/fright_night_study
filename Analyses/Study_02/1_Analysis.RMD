@@ -48,12 +48,11 @@ The `here()` function should ideally Tidentify our upper-level project directory
 
 ```{r Setting Working Directories}
   # Identifying our main directory
-  # WorkDir <- here::here()
-    WorkDir <- "C:/Users/Administrator/Documents/GitHub/fright_night_study"
+  WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Import <- paste0(WorkDir, "/data/Study_02/Raw/")
-  Plots <- paste0(WorkDir, "/plots/")
+  Import <- paste0(WorkDir, "/Data/Study_02/Raw/")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables")
 ```
 
 ## LOADING THE ORIGINAL (EXPERIENCER) DATA 
@@ -61,7 +60,7 @@ The `here()` function should ideally Tidentify our upper-level project directory
 Loading in our data
   
 ```{r Loading experiencer dataframe}
-  df.og <- read.csv(file = paste0(WorkDir, "/data/Pilot/Deriv/df_subset.csv"), 
+  df.og <- read.csv(file = paste0(WorkDir, "/Data/Pilot/Deriv/df_subset.csv"), 
                     header = T, 
                     sep=",", 
                     stringsAsFactors = T,
@@ -268,7 +267,7 @@ plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff(paste0(Plots, "Fig8.tiff"),       
+  tiff(paste0(Plots, "/Archive/Fig8.tiff"),       
        res = 300,
        units = "in",
        width = 12, 
@@ -512,7 +511,7 @@ plot
 
 ```{r Exporting Regulation & Intensity Regression}
   setwd(Plots)
-    tiff(paste0(Plots, "Fig5.tiff"),       
+    tiff(paste0(Plots, "Fig6.tiff"),       
        res = 300,
        units = "in",
        width = 12, 

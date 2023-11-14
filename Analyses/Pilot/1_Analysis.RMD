@@ -56,9 +56,9 @@ The `here()` function should ideally identify our upper-level project directory.
   WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Export <- paste0(WorkDir, "/data/Pilot/Deriv/")
-  Import <- paste0(WorkDir, "/data/Pilot/Raw/")
-  Plots <- paste0(WorkDir, "/plots/")
+  Export <- paste0(WorkDir, "/Data/Pilot/Deriv/")
+  Import <- paste0(WorkDir, "/Data/Pilot/Raw/")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables/")
 ```
 
 ## Building the Dataframe
@@ -67,7 +67,7 @@ We're going to start by loading in our cleaned dataframe
 
 ```{r Loading dataframe}
   # Loading in our cleaned dataset
-  df <- read.csv(file = paste0(Import, "df.csv"), 
+  df_all <- read.csv(file = paste0(Import, "df.csv"), 
                  header = T, sep=",", 
                  stringsAsFactors = F,
                  na.strings=c("","N/A"), 
@@ -80,10 +80,10 @@ Participant 1339 had reported being at the haunted house the week prior to expos
 
 ```{r Subsetting Participants Beyond Exclusion Criteria}  
   # Removing participant who violated eligibility standards
-  df <- subset(df,
-               (df$PID != "1339" & 
-                df$PID != "1307" & 
-                df$PID != "1308"))
+  df_all <- subset(df_all,
+               (df_all$PID != "1339" & 
+                df_all$PID != "1307" & 
+                df_all$PID != "1308"))
 ```
 
 ### General Data Cleaning / Correction
@@ -92,9 +92,9 @@ An executive decision prior to collection was that we'd collect fear intensity r
 
 ```{r Removing Intensities Lacking Endorsement}
   # Removing ratings provided for emotions that were not endorsed.
-  df$Emo.Extent[is.na(df$Presence)] <- NA
-  df$Reg.Extent[is.na(df$Presence)] <- NA
-  df$Reg.Extent[df$Reg.Extent == 1] <- NA
+  df_all$Emo.Extent[is.na(df_all$Presence)] <- NA
+  df_all$Reg.Extent[is.na(df_all$Presence)] <- NA
+  df_all$Reg.Extent[df_all$Reg.Extent == 1] <- NA
 ```  
 
 ### Cronbach's Alpha
@@ -102,7 +102,7 @@ Before we do anything, I want to assess the internal consistency of the emotions
 
 ```{r Building an Empty Dataframe to Calculate Chronbachs Alpha}
   # Generating an empty dataframe in a format conducive to completing the cronbach's alpha
-  alpha <- data.frame(PID = sort(rep(unique(df$PID), 10)), 
+  alpha <- data.frame(PID = sort(rep(unique(df_all$PID), 10)), 
                       Event = rep(1:10,47), 
                       Alert = NA,
                       Amuse = NA,
@@ -121,12 +121,11 @@ Before we do anything, I want to assess the internal consistency of the emotions
                       
 ```{r Building the dataframe by which to calculate Chronbachs Alpha}
 # Populating that dataframe with data from the original dataframe
- 
-for (row in 1:nrow(df)){
+for (row in 1:nrow(df_all)){
   if (row %% 14 != 0) {
-    if (!is.na(df$Presence[row])) {
-      if (df$Presence[row] == 1) {
-        alpha[ceiling(row/14), (2 + row %% 14)] <- df$Emo.Extent[row]
+    if (!is.na(df_all$Presence[row])) {
+      if (df_all$Presence[row] == 1) {
+        alpha[ceiling(row/14), (2 + row %% 14)] <- df_all$Emo.Extent[row]
       }
     }
   }
@@ -150,20 +149,20 @@ The Cronbach's alpha analysis indicated an internal consistency value of alpha =
 
 ### Creating New Variables 
 
-Much to my chagrin, the existing event variable notes the order in which events were recalled, not the chronological order in which the events occurred. Those are captured in the "EventsOrdered" columns. It's confusing to wrap your head around but the number that exists in a cell in those columns represents which event, in recall order, occurred first chronologically. So if df$EventsOrdered[1] read "7", then that would mean that the 7th event that that participant recalled occurred first chronologically. We care about both, so I'm going to create an order column for both.
+Much to my chagrin, the existing event variable notes the order in which events were recalled, not the chronological order in which the events occurred. Those are captured in the "EventsOrdered" columns. It's confusing to wrap your head around but the number that exists in a cell in those columns represents which event, in recall order, occurred first chronologically. So if df_all$EventsOrdered[1] read "7", then that would mean that the 7th event that that participant recalled occurred first chronologically. We care about both, so I'm going to create an order column for both.
 
 ```{r Creating a variable tracking the order in which events were entered}
 # Creating an empty variable in the dataframe
-df$Event_chronolorder <- NA
+df_all$Event_chronolorder <- NA
 
 # Iterating through each row ...
-for (row in 1:nrow(df)){
+for (row in 1:nrow(df_all)){
   # and each column of events ...
-  for (col in grep(x = names(df),
+  for (col in grep(x = names(df_all),
                  pattern = "EventsOrdered\\.*")){
     # and recording the appropriate index for each event.
-    if (df$Event[row] == df[row,col]){
-      df$Event_chronolorder[row] <- col + 1 - grep(x = names(df),
+    if (df_all$Event[row] == df_all[row,col]){
+      df_all$Event_chronolorder[row] <- col + 1 - grep(x = names(df_all),
                                                    pattern = "EventsOrdered\\.2")
     }
   }
@@ -175,45 +174,45 @@ rm(row, col)
 We are centering the intercept of the events on an extrapolated middle event (5.5). I should explain this because it confused the folks reviewing this script. Although colloquially, half of 10 is 5, that's only the case when we're operating on a number scale that's on Base 0. We had no Event 0; only Event 1. If we want to capture the average event, or in other words, the mean, we need event 5.5. We can pretty simply demonstate that 5.5 is the mean by running `mean(1:10)`. We could also just count on a number line. Event 5 is slightly closer to Event 1 (4 - 3 - 2 - 1) than it is Event 10 (6 - 7 - 8 - 9 - 10). This is a contentious choice because Event 5.5 doesn't really exist; we are extrapolating a datapoint. The contention isn't whether to center on 5 or 5.5: 5 is essentially just a random datapoint if it isn't at true center. We might as well center on 6 or 9 for that matter. Though, I did struggle with whether to center it in the middle or on the first event. My logic is that we likely will see effects of time and I'm more interested in the average, which event 5.5 better represents and which might better represent the data as a whole, than the first event. 
 
 ```{r Making the intercept of event the first event}
-  df$Event_recallorder <- as.numeric(df$Event - 4.5)
-  df$Event_chronolorder <- as.numeric(df$Event_chronolorder - 3.5)
+  df_all$Event_recallorder <- as.numeric(df_all$Event - 4.5)
+  df_all$Event_chronolorder <- as.numeric(df_all$Event_chronolorder - 3.5)
 ```
 
 Reordering and subsetting the variables that we care about.
 
 ```{r Subsetting Relevant Data}
-  df <- subset(df,
-               !is.na(df$Emo.Extent),
-               select = names(df)[c(1:2, 202:203, 6:11, 14, 16, 34:35, 38, 46,
+  df_all <- subset(df_all,
+               !is.na(df_all$Emo.Extent),
+               select = names(df_all)[c(1:2, 202:203, 6:11, 14, 16, 34:35, 38, 46,
                                     136:143, 162:166, 168:172, 187:196)])
 ```
 
 Emotions and their regulation can be an extremely personal and idiosyncratic experience. As such, we expect that Person A's regulation might look different than Person B's and using person-centered multilevel models might better capture that. 
 
 ```{r Person Centering and Aggregating}   
-df <- dplyr::group_by(df, as.factor(PID))
-df <- dplyr::mutate(df, 
+df_all <- dplyr::group_by(df_all, as.factor(PID))
+df_all <- dplyr::mutate(df_all, 
                  Emo.Extent.pmean = mean(Emo.Extent, na.rm=T),
                  Reg.Extent.pmean = mean(Reg.Extent, na.rm=T),
                  Emo.Extent.pc = Emo.Extent - mean(Emo.Extent, na.rm=T),
                  Reg.Extent.pc = Reg.Extent - mean(Reg.Extent, na.rm=T))
-df <- ungroup(df)
+df_all <- ungroup(df_all)
 ```
 
 Lastly, we're standardizing our variables so as to make them translatable and communicable.
 
 ```{r Z Scoring Aggregates}   
-df <- group_by(df, PID)
-df$Emo.Extent.pmean.z <- as.numeric(scale(df$Emo.Extent.pmean, scale = T, center = T))
-df$Reg.Extent.pmean.z <- as.numeric(scale(df$Reg.Extent.pmean, scale = T, center = T))
-df <- ungroup(df)
+df_all <- group_by(df_all, PID)
+df_all$Emo.Extent.pmean.z <- as.numeric(scale(df_all$Emo.Extent.pmean, scale = T, center = T))
+df_all$Reg.Extent.pmean.z <- as.numeric(scale(df_all$Reg.Extent.pmean, scale = T, center = T))
+df_all <- ungroup(df_all)
 ```
 
 ```{r Z Scoring Variables}
-  df$Emo.Extent.z <- as.numeric(scale(df$Emo.Extent, scale=T, center=T))
-  df$Reg.Extent.z <- as.numeric(scale(df$Reg.Extent, scale=T, center=T))
-  df$Emo.Extent.pc.z <- as.numeric(scale(df$Emo.Extent.pc, scale=T, center=T))
-  df$Reg.Extent.pc.z <- as.numeric(scale(df$Reg.Extent.pc, scale=T, center=T))
+  df_all$Emo.Extent.z <- as.numeric(scale(df_all$Emo.Extent, scale=T, center=T))
+  df_all$Reg.Extent.z <- as.numeric(scale(df_all$Reg.Extent, scale=T, center=T))
+  df_all$Emo.Extent.pc.z <- as.numeric(scale(df_all$Emo.Extent.pc, scale=T, center=T))
+  df_all$Reg.Extent.pc.z <- as.numeric(scale(df_all$Reg.Extent.pc, scale=T, center=T))
 ```
 
 ### Assessing the structure of our dataframe
@@ -221,59 +220,39 @@ df <- ungroup(df)
 Assessing whether the variables we want to use are structured correctly
 
 ```{r Structure of the dataframe}
-  str(df)
+  str(df_all)
 ```
 
 Coercing the data that is misstructured to the correct structure
 
 ```{r Restructuing Variables}
 # Coercing the easy variables
-  df$Emotion <- as.factor(df$Emotion)
-  df$Valence <- as.factor(df$Valence)
-  df$PID <- as.factor(df$PID)
+  df_all$Emotion <- as.factor(df_all$Emotion)
+  df_all$Valence <- as.factor(df_all$Valence)
+  df_all$PID <- as.factor(df_all$PID)
   
 # Now coercing the haunted house variables is hard because for some stupid reason, these were free response, so there's a lot of variance
 # When people give a range, we're going to take the average of that range. When left blank, it populated a period, so we'll replace those 
 # with NA. When not enough information is present, we will also use NA. Also, excel automatically converted "#-#" entries to months, so we'll
 # fix those as well (e.g., 3-5 becomes "5-March")
-  df$HauntedHouse_Times[df$HauntedHouse_Times == "."] <- NA
-  df$HauntedHouse_Times[df$HauntedHouse_Times == "3-Feb"] <- 2.5
-  df$HauntedHouse_Times[df$HauntedHouse_Times == "4-5 times"] <- 4.5
-  df$HauntedHouse_Times[df$HauntedHouse_Times == "5-Mar"] <- 4
-  df$HauntedHouse_Times[df$HauntedHouse_Times == "2 or 3 (ten + years ago)"] <- 2.5
-  df$HauntedHouse_Times[df$HauntedHouse_Times == "Once every couple of years"] <- NA
-  df$HauntedHouse_Compare[df$HauntedHouse_Compare == "."] <- NA
+  df_all$HauntedHouse_Times[df_all$HauntedHouse_Times == "."] <- NA
+  df_all$HauntedHouse_Times[df_all$HauntedHouse_Times == "3-Feb"] <- 2.5
+  df_all$HauntedHouse_Times[df_all$HauntedHouse_Times == "4-5 times"] <- 4.5
+  df_all$HauntedHouse_Times[df_all$HauntedHouse_Times == "5-Mar"] <- 4
+  df_all$HauntedHouse_Times[df_all$HauntedHouse_Times == "2 or 3 (ten + years ago)"] <- 2.5
+  df_all$HauntedHouse_Times[df_all$HauntedHouse_Times == "Once every couple of years"] <- NA
+  df_all$HauntedHouse_Compare[df_all$HauntedHouse_Compare == "."] <- NA
   
 # Now we'll coerce the other ones. 
-  df$HauntedHouse_Times <- as.numeric(df$HauntedHouse_Times)
-  df$HauntedHouse_Compare <- as.numeric(df$HauntedHouse_Compare)
+  df_all$HauntedHouse_Times <- as.numeric(df_all$HauntedHouse_Times)
+  df_all$HauntedHouse_Compare <- as.numeric(df_all$HauntedHouse_Compare)
 ```
 
 ```{r Adding Regulated Factor}  
-  df$Regulated <- NA
-  df$Regulated[df$Reg.Extent > 1] <- "Regulated"
-  df$Regulated[df$Reg.Extent < 2 | is.na(df$Reg.Extent)] <- "Not Regulated"
-  df$Regulated <- as.factor(df$Regulated)
-```
-
-```{r Creating a person-level dataframe}
-# This association was tested post-hoc in response to a request for a presentation on this study. It was not pre-registered, but I think is nonetheless valuable. 
-df_pl <- df %>%
-         subset(!is.na(.$Reg.Extent),
-                select = c("PID", "STAI_State", "Reg.Extent", "Event.ID")) %>%
-         group_by(PID) %>%
-         summarise(STAI_State = mean(STAI_State, na.rm = TRUE),
-                   Avg_Reg_Extent = mean(Reg.Extent, na.rm = TRUE)
-         )
-
-df_pl$STAI_State_z <- scale(df_pl$STAI_State) %>%
-                    as.numeric()
-df_pl$Avg_Reg_Extent_z <- scale(df_pl$Avg_Reg_Extent) %>%
-                    as.numeric()
-         
-m1 <- lm(Avg_Reg_Extent_z ~ STAI_State_z, data = df_pl,)
-summary(m1)
-confint(m1, level = 0.95)
+  df_all$Regulated <- NA
+  df_all$Regulated[df_all$Reg.Extent > 1] <- "Regulated"
+  df_all$Regulated[df_all$Reg.Extent < 2 | is.na(df_all$Reg.Extent)] <- "Not Regulated"
+  df_all$Regulated <- as.factor(df_all$Regulated)
 ```
 
 ## Calculating Quality Assurance Values and Exploring the Dataset
@@ -281,8 +260,8 @@ confint(m1, level = 0.95)
 We now want to subset events that were not regulated, that did not have negative emotions, that were regulated with only reappraisal or distraction. We'll get some output as to the stats of this dataset as well.
 
 ```{r Primary Dataframe}
-df <- subset(df, df$Regulated == "Regulated" & df$Valence == "Negative" & df$MultipleStrategies == 0 & ((df$Reappraisal == 1 & df$Attention.Deployment == 0) |
-                 (df$Reappraisal == 0 & df$Attention.Deployment == 1)))
+df <- subset(df_all, df_all$Regulated == "Regulated" & df_all$Valence == "Negative" & df_all$MultipleStrategies == 0 & 
+               ((df_all$Reappraisal == 1 & df_all$Attention.Deployment == 0) | (df_all$Reappraisal == 0 & df_all$Attention.Deployment == 1)))
 paste("Observations:", nrow(df))
 paste("Unique Events:", nrow(unique(df[,c('PID', 'Event_chronolorder')])))
 paste("Average Number of Emotions Per Event:", round(nrow(df)/nrow(unique(df[,c('PID', 'Event_chronolorder')])),2))
@@ -297,12 +276,12 @@ I want to save this dataframe for future use as well. We're going to subset out 
 # Defining which columns we want 
 cols_old <- c("Event.ID", "Event_chronolorder", "Attention.Deployment", "Emotion", "Emo.Extent", "Emo.Extent.z", "Emo.Extent.pc.z",
               "Reg.Extent", "Reg.Extent.z", "Reg.Extent.pc.z", "Emo.Extent.pmean.z",
-              "Reg.Extent.pmean.z", "PID", "ERQ_CogReapp", "ERQ_ExpSuppress", "IUS_Factor2", "BDI")
+              "Reg.Extent.pmean.z", "PID", "ERQ_CogReapp", "ERQ_ExpSuppress", "IUS", "IUS_Factor1", "IUS_Factor2", "BDI")
 
 # Defining what we want to change their names to
 cols_new <- c("Event", "Event_chronolorder", "Strategy.OG", "Emotion", "Emo.Extent", "Emo.Extent.z", "Emo.Extent.pc.z",
               "Reg.Extent", "Reg.Extent.z", "Reg.Extent.pc.z", "Emo.Extent.pmean.z",
-              "Reg.Extent.pmean.z", "PID.OG", "ERQ_Reapp.OG", "ERQ_Supp.OG", "IUS_F2.OG", 
+              "Reg.Extent.pmean.z", "PID.OG", "ERQ_Reapp.OG", "ERQ_Supp.OG", "IUS.OG", "IUS_F1.OG", "IUS_F2.OG", 
               "BDI")
 
 # Subsettting those columns
@@ -420,7 +399,8 @@ I generally subscribe to the information criterion approach, so I'm going to ass
 An ICC of 0.346 is pretty substantial. There's not lower or upper thresholds by which to assess the fittedness of ICC, but this is telling me that individual differences attributable to the PID variable are explaining a pretty big chunk of the variance (ICC = 0.0 would suggest no variance is explained and ICC = 1.0 would suggest all the variance is explained), so it's great we're using an HLM approach. 
 
 Now we'll iteratively construct our models. This is a little tricky because you should only add one variable at a time and test it against the previous iteration, stopping when you fail to find an improvement. However, if we're taking a person-centered approach, as I think it appropriate based on the high ICC value, we divide the emotional extent variable into two components: 1) a person's average intensity, and 2) their person-centered intensity. These together add up to what Emo.Extent would be if it wasn't person-centered anyway, so I don't think we're unduly influencing the amount of variance they explain (thus limiting their influence upon artificially deflating their AIC and BIC scores). All that is to say, I think this approach, comparing m1 to our null, is okay. Also note, I totally violate that approach with m2 by adding all of the covariates. Frankly, this is not a crucial analysis, so I was really just interested to see whether this relationship manages to hold up at all, even in the most conservative of circumstances. 
-fasdfasdf```{r Experimental Models}
+
+```{r Experimental Models}
   m1 <- lmer(Reg.Extent.z ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + (1 | PID), data = df, REML = F)  
   m2 <- lmer(Reg.Extent.z ~ Emo.Extent.pc.z + Emo.Extent.pmean.z + Age + Gender + BDI + 
              IUS_Factor2 + STAI_State + STAI_Trait + (1 | PID), data = df, REML = F)
@@ -523,7 +503,7 @@ plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff(paste0(Plots, "Fig2.tiff"),       
+  tiff(paste0(Plots, "Aarchive/Fig2.tiff"),       
        res = 300,
        units = "in",
        width = 12, 
@@ -532,8 +512,35 @@ plot
   dev.off()
   rm(plot)
 ```
-
 # Another Preliminary Analysis
+
+This was actually conducted Post-Hoc (i.e., not preregistered), so let me just be clear right out of the gate. Someone has asked me the extent to which anxiety might be a motivating factor to regulate and it got me thinking that using a validated measure of state anxiety may be a means of assessing the motivation to self-regulate. 
+
+```{r Creating a person-level dataframe}
+df_pl <- df_all %>%
+         subset(!is.na(.$Reg.Extent),
+                select = c("PID", "STAI_State", "Reg.Extent", "Event.ID")) %>%
+         group_by(PID) %>%
+         summarise(STAI_State = mean(STAI_State, na.rm = TRUE),
+                   Avg_Reg_Extent = mean(Reg.Extent, na.rm = TRUE)
+         )
+```
+
+```{r Rescaling variables}
+df_pl$STAI_State_z <- scale(df_pl$STAI_State) %>%
+                    as.numeric()
+df_pl$Avg_Reg_Extent_z <- scale(df_pl$Avg_Reg_Extent) %>%
+                    as.numeric()
+```
+
+```{r Running analyses}
+m1 <- lm(Avg_Reg_Extent_z ~ STAI_State_z, data = df_pl,)
+summary(m1)
+confint(m1, level = 0.95)
+rm(m1,df_pl)
+```
+
+# Yet Another Preliminary Analysis
 
 Before I hop into the primary analysis, there's one more thing I wanted to explore. It makes sense that individuals with a high ERQ Reappraisal score should report using reappraisal more frequently than those that do not. I'm going to create a dataframe to explore this
 
@@ -592,6 +599,7 @@ Ouff, we really don't have enough reappraisal to run this analysis well, so I do
 ```
 
 We didn't find a ***damn*** thing, but again, let's keep in mind that this is very underpowered.
+
 
 # Primary Analysis
 
@@ -668,7 +676,7 @@ plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff(paste0(Plots,"Fig3.tiff"),
+  tiff(paste0(Plots,"Archive/Fig3.tiff"),
        res = 300,
        units = "in",
        width = 12, 
@@ -737,6 +745,8 @@ df_temp$Emo_Sum_pmean.z <- NA
 df_temp$Emo_Mean_pmean.z <- NA
 df_temp$Attention.Deployment <- NA
 df_temp$Gender <- NA
+df_temp$IUS <- NA
+df_temp$IUS_Factor1 <- NA
 df_temp$IUS_Factor2 <- NA
 df_temp$STAI_State <- NA
 df_temp$STAI_Trait <- NA
@@ -760,8 +770,12 @@ for (i in 1:nrow(df_temp)){
                                         df$Event_chronolorder == df_temp$Event_chronolorder[i]])
   df_temp$Gender[i] <- df$Gender[df$PID == df_temp$PID[i] &
                                  df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]
-  df_temp$IUS_Factor2[i] <- df$IUS_Factor2[df$PID == df_temp$PID[i] &
+  df_temp$IUS[i] <- df$IUS[df$PID == df_temp$PID[i] &
                                  df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]  
+  df_temp$IUS_Factor1[i] <- df$IUS_Factor1[df$PID == df_temp$PID[i] &
+                               df$Event_chronolorder == df_temp$Event_chronolorder[i]][1] 
+  df_temp$IUS_Factor2[i] <- df$IUS_Factor2[df$PID == df_temp$PID[i] &
+                               df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]  
   df_temp$STAI_State[i] <- df$STAI_State[df$PID == df_temp$PID[i] &
                                  df$Event_chronolorder == df_temp$Event_chronolorder[i]][1]
   df_temp$STAI_Trait[i] <- df$STAI_Trait[df$PID == df_temp$PID[i] &

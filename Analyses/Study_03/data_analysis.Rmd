@@ -11,15 +11,37 @@ if (require("pacman") == FALSE){
   install.packages("pacman")
 }
 
-pacman::p_load(effects, here, interactions, lme4, lmerTest, multicomp, DHARMa, performance, stargazer, tidyverse)
+source("https://github.com/wj-mitchell/fright_night_study/blob/main/func_pavlovia_cleaner.R?raw=TRUE", local = T)
+
+pacman::p_load(DHARMa, 
+               effects, 
+               here, 
+               interactions, 
+               lme4, 
+               lmerTest, 
+               multicomp, 
+               performance, 
+               stargazer, 
+               tidyverse)
 ```
 
-```{r Setting a working directory}
-here()
-```
+Indicating how I want numbers presented and formatted
 
-```{r Loading Custom Function}
-source("func_pavlovia_cleaner.R")
+``` {r Number Formatting}
+  options(scipen=100)
+  options(digits=3)
+  options(tinytex.verbose = TRUE)
+```
+  
+The `here()` function should ideally Tidentify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
+```{r Setting Working Directories}
+  # Identifying our main directory
+  WorkDir <- here::here()
+
+  # Identifying specific directories to read and write from
+  Import <- paste0(WorkDir, "/Data/Study_03/Source/")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables")
 ```
 
 # ----- LOADING IN DATA -----
