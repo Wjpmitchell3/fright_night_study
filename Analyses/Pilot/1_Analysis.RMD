@@ -503,7 +503,7 @@ plot
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff(paste0(Plots, "Aarchive/Fig2.tiff"),       
+  tiff(paste0(Plots, "Archive/Fig2.tiff"),       
        res = 300,
        units = "in",
        width = 12, 

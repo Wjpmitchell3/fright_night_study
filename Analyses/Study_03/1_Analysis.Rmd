@@ -46,7 +46,7 @@ The `here()` function should ideally Tidentify our upper-level project directory
 
   # Identifying specific directories to read and write from
   Import <- paste0(WorkDir, "/Data/Study_03/Source/")
-  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables")
+  Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables/")
   
   # Loading Custom Functions
   source(paste0(WorkDir, "/Analyses/Study_03/func_pavlovia_cleaner.R"))
