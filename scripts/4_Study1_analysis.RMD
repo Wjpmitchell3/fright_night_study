@@ -55,8 +55,8 @@ The `here()` function should ideally identify our upper-level project directory.
   WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Import <- paste0(WorkDir, "/data/Study_01/Raw/")
-  Plots <- paste0(WorkDir, "/plots/")
+  Import <- paste0(WorkDir, "/../data/Study_01/Raw/")
+  Plots <- paste0(WorkDir, "/../plots/")
 ```
 
 # Loading in the data
@@ -64,12 +64,19 @@ The `here()` function should ideally identify our upper-level project directory.
 Once we've loaded in the data, we want to exclude any observations that lack a clear emotion (following lemmatization (i.e., `df$EmoMod`)). 
 
 ```{r Pulling in Dataframe}
-  df <- read.csv(file = paste0(Import, "df.csv"), 
+  df <- read.csv(file = "C:/Users/Administrator/Documents/GitHub/fright_night_study/data/Study_01/Raw/df.csv", 
                  header = T, 
                  sep=",",
                  row.names = 1, 
                  stringsAsFactors = F,
                  na.strings=c("","NA", "N/A"))
+
+  # df <- read.csv(file = paste0(Import, "df.csv"), 
+  #                header = T, 
+  #                sep=",",
+  #                row.names = 1, 
+  #                stringsAsFactors = F,
+  #                na.strings=c("","NA", "N/A"))
   df_all <- df %>%
         subset(!is.na(df$EmoMod) &
                df$EmoMod != "" &
@@ -148,6 +155,10 @@ for (i in 1:nrow(df_pl)){
 }
 
 rm(i, total, dist)
+```
+
+```{r}
+summary(aov(PropDist ~ Cond, data = df_pl))
 ```
 
 # Possible Covariates
@@ -502,7 +513,8 @@ We're starting by subsetting the relevant variables and data
 ```{r Creating a Subset of Data}
 df <- subset(df_sub, 
              !is.na(df_sub$Disengage),
-             select = c("Disengage", "PID", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
+             select = c("Disengage", "PID", "Intense", 
+                        "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap"))
 ```
 
 Now I'm printing summary statistics
@@ -567,6 +579,7 @@ exp(0.548)
 ```
 
 Again, we're going to repeat this process throughout so I'm going to scale back the commentary
+
 
 ## Application of Engagement/Disengagement Strategies with Negative Emotions
 
@@ -699,7 +712,7 @@ Now we're going to narrow this further by specifically looking at reappraisal an
 df <- subset(df_sub, 
              !is.na(df_sub$Distracted) &
              df_sub$Valence < 0.5,
-             select = c("Distracted", "Distracted_cat", "PID", "Intense", "EmoMod", "Intense","Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess.z"))
+             select = c("Distracted", "Distracted_cat", "PID", "Intense", "EmoMod", "Intense.z", "Intense.pc.z", "Intense.pmean.z", "Timing", "EventNum", "Fear.Before", "Fear.Enjoy", "ERQ_CogReap", "RegSuccess", "RegSuccess.z"))
 ```
 
 ```{r Printing Details}
@@ -785,6 +798,30 @@ plot
        width = 12, 
        height = 9)
   plot
+  dev.off()
+```
+
+```{r}
+  Plot <- ggplot(data = df, aes(x = df$Intense, y = RegSuccess, color = df$Distracted_cat)) +
+  stat_smooth(method = "lm",size = 4.5) +
+  scale_color_discrete("Strategy") +
+  labs(x = "Emotion Intensity",
+       y ="Regulation Success") +
+  coord_cartesian(ylim=c(0, 4)) +
+  theme_classic() +  
+  theme(axis.title = element_text(size = 32, color = "Black")) +
+  theme(axis.text.x = element_text(size = 36, color = "Black")) +
+  theme(axis.text.y = element_text(size = 30, color = "Black"))  
+  Plot
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  tiff("C:/Users/Administrator/Documents/GitHub/fright_night_study/plots/Fig4.tiff",       
+       res = 300,
+       units = "in",
+       width = 12, 
+       height = 9)
+  Plot
   dev.off()
 ```
 
