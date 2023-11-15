@@ -1,0 +1,5 @@
+"trial_id","trial_type","trial_index","time_elapsed","internal_node_id","subject_id","study_id","session_id","success","timeout","failed_images","failed_audio","failed_video","task","condition","rt","time","width","height","webaudio","browser","browser_version","mobile","os","fullscreen","vsync_rate","webcam","microphone"
+"pavlovia_init","pavlovia","0","1168","0.0-0.0","612e64b26c1ed4e6cc77686a","652d46c8909a0ef52332ec58","652f0d65de3cf05f926c1b94","","","","","","","","","","","","","","","","","","","",""
+"","preload","1","4252","0.0-1.0","612e64b26c1ed4e6cc77686a","652d46c8909a0ef52332ec58","652f0d65de3cf05f926c1b94","true","false","[]","[]","[]","Preload","Experience","","","","","","","","","","","","",""
+"","fullscreen","2","7490","0.0-2.0","612e64b26c1ed4e6cc77686a","652d46c8909a0ef52332ec58","652f0d65de3cf05f926c1b94","true","","","","","Fullscreen","","2230","17:41:15","","","","","","","","","","",""
+"","browser-check","3","11707","0.0-3.0","612e64b26c1ed4e6cc77686a","652d46c8909a0ef52332ec58","652f0d65de3cf05f926c1b94","","","","","","Browser_Check","","","","432","916","true","chrome","117.0.0","true","Android OS","true","117.21","true","true"

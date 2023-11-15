@@ -1,0 +1,424 @@
+---
+title: "ER Choice v. Usage - Study 2 Dataframe Creation"
+author: "W.J. Mitchell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# ----- SCRIPT START -----
+
+Specifying our package usage
+
+```{r Packages I Use}
+ # If the pacman package manager is not currently installed on this system, install it.
+  if (require("pacman") == FALSE){
+    install.packages("pacman")
+  }
+
+  # Loading in my packages with my pacman manager
+   pacman::p_load(here,
+                  tidyverse)
+```
+
+Indicating how I want numbers presented and formatted
+
+``` {r Number Formatting}
+  options(scipen=100)
+  options(digits=3)
+  options(tinytex.verbose = TRUE)
+```
+
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
+```{r Setting Working Directories}
+  # Identifying our main directory
+  WorkDir <- here::here()
+
+  # Identifying specific directories to read and write from
+  Export <- paste0(WorkDir, "/Data/Study_02/Raw/")
+  Import <- paste0(WorkDir, "/Data/Study_02/Source/")
+```
+
+#  DATAFRAME CREATION 
+  
+We're going to load in our raw data
+  
+```{r Loading dataframe}
+  df.temp <- read.csv(file = paste0(Import, "df.csv"), 
+                 header = T, sep=",", 
+                 stringsAsFactors = F,
+                 na.strings=c("","N/A"))
+```
+
+Removing participants who did not consent, who did not complete, and who failed the attention check.
+
+``` {r Removing Non-Completers, Non-Consenters}
+  df.temp <- subset(df.temp, df.temp$Finished == "True" &
+                             df.temp$Progress == "100" &
+                             df.temp$Consent == "I consent to participating in this study" &
+                             df.temp$Attention.Check == "Distraction")
+```
+
+Removing people who finished too quickly or too slowly as determined by a time registered as three standard deviation units above or below the average.
+
+```{r Removing Folks Based on Time}
+  df.temp <- subset(df.temp, 
+                    abs(as.numeric(scale(as.numeric(df.temp$Duration), 
+                                         center = T, 
+                                         scale = T))) <= 3)
+```
+
+Removing rows with data we don't really need for the analysis
+
+```{r Removing Superfluous columns}
+  df.temp <- df.temp[,c(27,29:173,13,14)]
+```
+  
+The standard PID is too clunky to be useful, so I'm creating a much smoother PID for each participant.  
+
+```{r Adding a Cleaning PID}  
+  df.temp$PID.FU <- c(paste("P00", seq(1,9,1), 
+                         sep = ""), 
+                   paste("P0", seq(10,99,1), 
+                         sep = ""), 
+                   paste("P", seq(100,length(rownames(df.temp)),1), 
+                         sep = ""))
+```
+
+# MEASURE SCORING
+
+This part is kind of boring; just quantifying qualitative measurements for each scale
+
+## ERQ
+
+``` {r Scoring ERQ}
+# Iterating through each column and row and coverting semantic responses to numeric ones
+for (i in 1:length(rownames(df.temp))){
+  for (s in 89:98){
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Strongly disagree")
+      df.temp[i,s] <- 1
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Disagree")
+      df.temp[i,s] <- 2
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Somewhat disagree")
+      df.temp[i,s] <- 3
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Neither agree nor disagree")
+      df.temp[i,s] <- 4
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Somewhat agree")
+      df.temp[i,s] <- 5
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Agree")
+      df.temp[i,s] <- 6
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Strongly agree")
+      df.temp[i,s] <- 7
+    }
+}
+
+# Converting the structure of each column from string to numeric
+for (i in 89:98){
+  df.temp[,i] <- as.numeric(df.temp[,i])
+}
+
+# Calculating the sum of each subscale
+for (i in 1:length(rownames(df.temp))){
+  df.temp$ERQ_Reapp.FU[i] <- sum(df.temp$ERQ01[i] + 
+                              df.temp$ERQ03[i] + 
+                              df.temp$ERQ05[i] + 
+                              df.temp$ERQ07[i] + 
+                              df.temp$ERQ08[i] + 
+                              df.temp$ERQ10[i])
+  df.temp$ERQ_Supp.FU[i] <- sum(df.temp$ERQ02[i] + 
+                             df.temp$ERQ04[i] + 
+                             df.temp$ERQ06[i] + 
+                             df.temp$ERQ09[i])
+}
+```
+
+## DERS
+
+``` {r Scoring DERS}
+# Iterating through each column and row and coverting semantic responses to numeric ones
+for (i in 1:length(rownames(df.temp))){
+  for (s in 99:134){
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Almost never\n\n(00 - 10 %)\n")
+      df.temp[i,s] <- 1
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Sometimes\n(11 – 35%)\n")
+      df.temp[i,s] <- 2
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "About half the time\n(36 – 65%)\n")
+      df.temp[i,s] <- 3
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Most of the time\n(66 – 90%)\n")
+      df.temp[i,s] <- 4
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Almost always\n(91 – 100%)\n")
+      df.temp[i,s] <- 5
+    }
+}
+
+# Converting the structure of each column from string to numeric
+for (i in 99:134){
+  df.temp[,i] <- as.numeric(df.temp[,i])
+}
+
+# Reverse scoring specific items
+DERS.Reverse <- c(1,2,6,7,8,10,17,20,22,24,34)
+for (i in DERS.Reverse){
+  for (s in 1:length(rownames(df.temp))){
+  df.temp[s,(98 + i)] <- sum(6 - df.temp[s,(98 + i)])
+  }  
+}
+
+# Calculating the sum of each subscale
+for (i in 1:length(rownames(df.temp))){
+  df.temp$DERS.FU[i] <- sum(df.temp$DERS01[i] + df.temp$DERS02[i] + df.temp$DERS03[i] + df.temp$DERS04[i] + df.temp$DERS05[i] + df.temp$DERS06[i] +
+                         df.temp$DERS07[i] + df.temp$DERS08[i] + df.temp$DERS09[i] + df.temp$DERS10[i] + df.temp$DERS11[i] + df.temp$DERS12[i] +
+                         df.temp$DERS13[i] + df.temp$DERS14[i] + df.temp$DERS15[i] + df.temp$DERS16[i] + df.temp$DERS17[i] + df.temp$DERS18[i] +
+                         df.temp$DERS19[i] + df.temp$DERS20[i] + df.temp$DERS21[i] + df.temp$DERS22[i] + df.temp$DERS23[i] + df.temp$DERS24[i] +
+                         df.temp$DERS25[i] + df.temp$DERS26[i] + df.temp$DERS27[i] + df.temp$DERS28[i] + df.temp$DERS29[i] + df.temp$DERS30[i] +
+                         df.temp$DERS31[i] + df.temp$DERS32[i] + df.temp$DERS33[i] + df.temp$DERS34[i] + df.temp$DERS35[i] + df.temp$DERS36[i])
+  df.temp$DERS.Nonaccept.FU[i] <- sum(df.temp$DERS11[i] + df.temp$DERS12[i] + df.temp$DERS21[i] + df.temp$DERS23[i] + df.temp$DERS25[i] + df.temp$DERS29[i])
+  df.temp$DERS.DiffGoal.FU[i] <- sum(df.temp$DERS13[i] + df.temp$DERS18[i] + df.temp$DERS20[i] + df.temp$DERS26[i] + df.temp$DERS33[i])
+  df.temp$DERS.Impulse.FU[i] <- sum(df.temp$DERS03[i] + df.temp$DERS14[i] + df.temp$DERS19[i] + df.temp$DERS24[i] + df.temp$DERS27[i] + df.temp$DERS32[i])
+  df.temp$DERS.LackAware.FU[i] <- sum(df.temp$DERS02[i] + df.temp$DERS06[i] + df.temp$DERS08[i] + df.temp$DERS10[i] + df.temp$DERS17[i] + df.temp$DERS34[i])
+  df.temp$DERS.LimitAccess.FU[i] <- sum(df.temp$DERS15[i] + df.temp$DERS16[i] + df.temp$DERS22[i] + df.temp$DERS28[i] + df.temp$DERS30[i] + df.temp$DERS31[i] +                                          df.temp$DERS35[i] + df.temp$DERS36[i])
+  df.temp$DERS.LackClarity.FU[i] <- sum(df.temp$DERS01[i] + df.temp$DERS04[i] + df.temp$DERS05[i] + df.temp$DERS07[i] + df.temp$DERS09[i])
+}
+
+# Removing superfluous arrays
+rm(DERS.Reverse)
+```
+
+## IUS-SF
+
+``` {r Scoring IUS-SF}
+
+# Iterating through each column and row and coverting semantic responses to numeric ones
+for (i in 1:length(rownames(df.temp))){
+  for (s in 135:146){
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Not at all\ncharacteristic of me\n")
+      df.temp[i,s] <- 1
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "A little \ncharacteristic of me\n")
+      df.temp[i,s] <- 2
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Somewhat\n\ncharacteristic of me\n")
+      df.temp[i,s] <- 3
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Very\ncharacteristic of me\n")
+      df.temp[i,s] <- 4
+    if (!is.na(df.temp[i,s]) & df.temp[i,s] == "Entirely\ncharacteristic of me\n")
+      df.temp[i,s] <- 5
+    }
+}
+
+# Converting the structure of each column from string to numeric
+for (i in 135:146){
+  df.temp[,i] <- as.numeric(df.temp[,i])
+}
+
+# Calculating the sum of each subscale
+for (i in 1:length(rownames(df.temp))){
+  df.temp$IUS.FU[i] <- sum(df.temp$IUS.SF01[i] + df.temp$IUS.SF02[i] + df.temp$IUS.SF03[i] + df.temp$IUS.SF04[i] + df.temp$IUS.SF05[i] + df.temp$IUS.SF06[i] +
+                         df.temp$IUS.SF07[i] + df.temp$IUS.SF08[i] + df.temp$IUS.SF09[i] + df.temp$IUS.SF10[i] + df.temp$IUS.SF11[i] + df.temp$IUS.SF12[i])
+  df.temp$IUS_F1.FU[i] <- sum(df.temp$IUS.SF01[i] + df.temp$IUS.SF02[i] + df.temp$IUS.SF04[i] + df.temp$IUS.SF05[i] + df.temp$IUS.SF08[i] + df.temp$IUS.SF09[i] + df.temp$IUS.SF11[i])
+  df.temp$IUS_F2.FU[i] <- sum(df.temp$IUS.SF03[i] + df.temp$IUS.SF06[i] + df.temp$IUS.SF07[i] + df.temp$IUS.SF10[i] + df.temp$IUS.SF12[i])
+}
+
+# Removing for loop variables
+rm(i,s)
+```
+
+Now we don't need the actual scale responses being clunky and taking up space, so we'll remove those too. 
+
+``` {r Losing Scale Responses}
+df.temp <- df.temp[,-c(89:146)]
+```
+
+# DATAFRAME FORMATTING
+
+Alright, now we have this really ugly dataframe where each of the first 88 columns represents all of the responses the 152 participants gave to each scenario and we want to convert that to long format. 
+```{r Reformatting Dataframe Into Long Form}
+df.temp <-pivot_longer(data=df.temp,
+                       cols=colnames(df.temp[1:88]),
+                       names_to="Event",
+                       values_to="Strategy.FU")
+```
+
+Now we'll read in the original dataframe (i.e., what experiencers in the haunted house actually did when faced with these situations) ...
+
+```{r Loading dataframe}
+  df.og <- read.csv(file = paste0(WorkDir,"/data/Pilot/Deriv/df_subset.csv"), 
+                 header = T, sep=",",
+                 row.names = 1,
+                 stringsAsFactors = F,
+                 na.strings=c("","N/A"))
+```
+
+...and an event-level dataframe (i.e., collapsing across all emotions, wherein each event only takes up a single row)
+
+```{r Loading dataframe}
+  df.og.el <- read.csv(file = paste0(WorkDir, "/data/Pilot/Deriv/df_subset_eventlevel.csv"), 
+                 header = T, sep=",",
+                 row.names = 1,
+                 stringsAsFactors = F,
+                 na.strings=c("","N/A"))
+```
+
+We're going to merge both of the original dataframes together ...
+
+```{r Creating a person level dataframe for the og dataset}
+df.og <- merge(y = df.og.el,
+               x = df.og,
+               by.y = c("PID", "Event_chronolorder", "IUS_Factor2", "IUS"),
+               by.x = c("PID.OG", "Event_chronolorder", "IUS_F2.OG", "IUS.OG"),
+               all.y = F,
+               all.x = T) %>%
+               .[,-which(names(.) == "Attention.Deployment")]
+```
+
+... and then append them to the new dataframe based upon unique event IDs
+
+``` {r Merging Fear Endorsements with the Main Dataframe}
+  df <- merge(df.temp, 
+              df.og, 
+              by = "Event", 
+              all.x = F, 
+              all.y = T) %>%
+        distinct()
+  rm(df.temp, df.og, df.og.el)
+```
+
+Now that we have them together, we're going to construct an "accuracy" variable. In other words, did these two people choose the same strategy in the same scenario? 
+
+```{r Creating an Accuracy Variable}  
+  df$Accurate[df$Strategy.FU == df$Strategy.OG] <- 1
+  df$Accurate[df$Strategy.FU != df$Strategy.OG] <- 0
+```  
+
+It may be the case that individuals are more accurate and predicting strategy when they have more similar underlying tendencies. As such would be a good control analysis to see whether or not that's the case, and I think the only measure we have of that from both original and follow-up participants is likely the ERQ.
+
+```{r Creating an Accuracy Variable}
+  df$ERQ_Reapp.Diff <- df$ERQ_Reapp.FU - df$ERQ_Reapp.OG
+  df$ERQ_Supp.Diff <- df$ERQ_Supp.FU - df$ERQ_Supp.OG
+  df$ERQ_Reapp.Diff.abs <- abs(df$ERQ_Reapp.Diff)
+  df$ERQ_Supp.Diff.abs <- abs(df$ERQ_Supp.Diff)
+  df$ERQ_Reapp.Diff.abs.z <- scale(df$ERQ_Reapp.Diff.abs, center = T, scale = T)
+  df$ERQ_Supp.Diff.abs.z <- scale(df$ERQ_Supp.Diff.abs, center = T, scale = T)
+  names(df) <- str_replace_all(string = names(df),
+                               pattern = "\\[\\,1\\]",
+                               replacement = "")
+  
+```  
+
+#  CREATING A PERSON LEVEL DATAFRAME
+
+Okay, lastly, it may be good to have a person-level dataframe of the new all-combined together data. I'm going to take a similar approach to how I'd constructed this in the pilot. 
+
+I'll start by saving the unique PIDs as an array
+
+````{r Designating Rows}
+rows <- sort(unique(df$PID.FU))
+```
+
+... and note which variables I want as my columns. Note that I have a new variable titled "dprime_...". This is taken directly from the memory literature and is a measurement of signal strength. It will tell us whether participants were selecting the same strategies above chance while accounting for differences in the distribution or relative frequency in how often the strategies were used. 
+
+````{r Designating Columns}
+cols <- c("PID.FU", "Percent.Distract", "dprime_Distract", "dprime_Reapp", "Accuracy", "ERQ_Reapp.FU")
+```
+
+Now I'm creating the empty dataframe ...
+
+````{r Designating Columns}
+df.pl <-data.frame(matrix(NA, 
+                   nrow = length(rows), 
+                   ncol = length(cols), 
+                   dimnames = list(rows, cols)))
+rm(cols)
+```
+
+... and creating a numeric strategy column. 
+
+```{r Creating a Numeric Strategy Variable to Calculate Stats}
+df$Strategy.FU_num <- 0
+df$Strategy.FU_num[df$Strategy.FU == "Distraction"] <- 1
+```
+
+We'll copy over all of the relevant individual difference measures, even the ones we don't care about in this analysis, just to have them in case we want to do follow up analyses in the future. 
+
+````{r Populating PID, ERQ, and individual difference measures}
+df.pl$PID.FU <- rows
+for (i in rows){
+  df.pl$Gender[df.pl$PID.FU == i] <- df$Gender.Identity[df$PID.FU == i][1]
+  df.pl$Age[df.pl$PID.FU == i] <- df$Age[df$PID.FU == i][1]
+  df.pl$ERQ_Reapp.FU[df.pl$PID.FU == i] <- df$ERQ_Reapp.FU[df$PID.FU == i][1]
+  df.pl$ERQ_Supp.FU[df.pl$PID.FU == i] <- df$ERQ_Supp.FU[df$PID.FU == i][1]
+  df.pl$DERS.FU[df.pl$PID.FU == i] <- df$DERS.FU[df$PID.FU == i][1]
+  df.pl$DERS.Nonaccept.FU[df.pl$PID.FU == i] <- df$DERS.Nonaccept.FU[df$PID.FU == i][1]
+  df.pl$DERS.DiffGoal.FU[df.pl$PID.FU == i] <- df$DERS.DiffGoal.FU[df$PID.FU == i][1]
+  df.pl$DERS.Impulse.FU[df.pl$PID.FU == i] <- df$DERS.Impulse.FU[df$PID.FU == i][1]
+  df.pl$DERS.LimitAccess.FU[df.pl$PID.FU == i] <- df$DERS.LimitAccess.FU[df$PID.FU == i][1]
+  df.pl$DERS.LackClarity.FU[df.pl$PID.FU == i] <- df$DERS.LackClarity.FU[df$PID.FU == i][1]
+  df.pl$IUS.FU[df.pl$PID.FU == i] <- df$IUS.FU[df$PID.FU == i][1]
+  df.pl$IUS_F1.FU[df.pl$PID.FU == i] <- df$IUS_F1.FU[df$PID.FU == i][1]
+  df.pl$IUS_F2.FU[df.pl$PID.FU == i] <- df$IUS_F2.FU[df$PID.FU == i][1]   
+  df.pl$ERQ_Reapp.Diff.abs.avg[df.pl$PID.FU == i] <-mean(df$ERQ_Reapp.Diff.abs[df$PID.FU == i], na.rm= T)
+  df.pl$ERQ_Supp.Diff.abs.avg[df.pl$PID.FU == i] <- mean(df$ERQ_Supp.Diff.abs[df$PID.FU == i], na.rm= T)
+  df.pl$ERQ_Reapp.Diff.abs.z.avg[df.pl$PID.FU == i] <-mean(df$ERQ_Reapp.Diff.abs.z[df$PID.FU == i], na.rm= T)
+  df.pl$ERQ_Supp.Diff.abs.z.avg[df.pl$PID.FU == i] <- mean(df$ERQ_Supp.Diff.abs.z[df$PID.FU == i], na.rm= T)
+}
+rm(i)
+```
+
+Now we'll calcualte D Prime. D Prime is calculated as the normalized value of the proportion of hits (when the target was present and selected) minus the proportion of false alarms (when the target was absent and selected). We can include a bias parameter to adjust for the differences in strategy frequency. 
+
+```{r Populating accuracy and percentage of distraction}
+# Creating a temporary subsetted dataframe of unique events
+df_temp <- subset(df,
+                  select = c("PID.FU", "Event", "Accurate", "Strategy.FU_num", "Strategy.FU", "Strategy.OG")) %>%
+           distinct()
+
+# Iterating through each row ...
+
+for (i in rows){
+  
+  # and identifying how often participants used distraction over reappraisal ...
+  df.pl$Percent.Distract[df.pl$PID.FU == i] <- sum(df_temp$Strategy.FU_num[df_temp$PID.FU == i], na.rm= T)/length(unique(df_temp$Event))
+  
+  # ...how accurate they were on average ...
+  df.pl$Accuracy[df.pl$PID.FU == i] <- sum(df_temp$Accurate[df_temp$PID.FU == i], na.rm= T)/length(unique(df_temp$Event))
+  
+  # what the bias parameter should be ...
+  bias_parameter <- -((qnorm(length(which(df_temp$Accurate == 1 &
+                                 df_temp$PID.FU == i & 
+                                 df_temp$Strategy.FU == "Distraction"))/length(unique(df_temp$Event))) +
+                      qnorm(length(which(df_temp$Accurate == 0 &
+                                   df_temp$PID.FU == i &
+                                   df_temp$Strategy.FU == "Distraction"))/length(unique(df_temp$Event)))) / 2) 
+  
+  # ...what their d` value is for distraction...
+  df.pl$dprime_Distract[df.pl$PID.FU == i] <- qnorm(length(which(df_temp$Accurate == 1 &
+                                                           df_temp$PID.FU == i & 
+                                                           df_temp$Strategy.FU == "Distraction"))/length(unique(df_temp$Event))) 
+                                              qnorm(length(which(df_temp$Accurate == 0 &
+                                                           df_temp$PID.FU == i &
+                                                           df_temp$Strategy.FU == "Distraction"))/length(unique(df_temp$Event))) + bias_parameter
+  # and then the same...   
+  bias_parameter <- -((qnorm(length(which(df_temp$Accurate == 1 &
+                                 df_temp$PID.FU == i & 
+                                 df_temp$Strategy.FU == "Reappraisal"))/length(unique(df_temp$Event))) +
+                      qnorm(length(which(df_temp$Accurate == 0 &
+                                   df_temp$PID.FU == i &
+                                   df_temp$Strategy.FU == "Reappraisal"))/length(unique(df_temp$Event)))) / 2) 
+  
+  # ...calculations for reappraisal
+  df.pl$dprime_Reapp[df.pl$PID.FU == i] <- qnorm(length(which(df_temp$Accurate == 1 &
+                                                        df_temp$PID.FU == i & 
+                                                        df_temp$Strategy.FU == "Reappraisal"))/length(unique(df_temp$Event))) -
+                                           qnorm(length(which(df_temp$Accurate == 0 &
+                                                        df_temp$PID.FU == i &
+                                                        df_temp$Strategy.FU == "Reappraisal"))/length(unique(df_temp$Event))) + bias_parameter
+}
+
+# Cleaning our space
+rm(df_temp,i)
+```
+
+# EXPORTING
+
+```{r Writing Data}
+write.csv(df, paste0(Export, "df.csv"))
+write.csv(df.pl, paste0(Export, "df_personlevel.csv"))
+```

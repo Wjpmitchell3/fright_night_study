@@ -1,0 +1,621 @@
+,Emotion,EmoMod
+1,-,NA
+10,admiration,admiration
+11,adrenaline,adrenaline
+12,adrenaline rush,adrenaline
+13,afraid,afraid
+14,agitation,agitation
+15,alarm,alarmed
+16,alarmed,alarmed
+359,mildly alarmed,alarmed
+17,alert,alert
+18,alertful,alert
+19,alertness,alert
+20,amazed,amazed
+21,amazement,amazed
+22,amazement that he moved that fast,amazed
+23,amused,amused
+24,amusement,amused
+25,analysis,analysis
+26,anger,angry
+27,angry,angry
+28,angst,angst
+29,annoyance,annoyed
+30,annoyed,annoyed
+31,annoying,annoyed
+32,anticipating,anticipation
+33,anticipation,anticipation
+34,antsy,antsy
+35,anxiety,anxious
+36,anxious,anxious
+37,anxiousness,anxious
+38,apathetic,apathetic
+39,apathy,apathetic
+40,appaled,appalled
+41,appreciation,appreciative
+42,appreciative,appreciative
+43,"appreciative of the gore, but also mildly traumatizing",appreciative
+44,apprehension,apprehensive
+45,apprehensive,apprehensive
+46,arousal,arousal
+47,astonished,astonished
+48,attentive,attentive
+49,aversion,aversion
+50,awake,awake
+51,aware,aware
+52,awe,awed
+53,awed,awed
+54,awful,awful
+55,awkward,awkward
+56,awkwardness,awkward
+57,bad,bad
+58,bamboozled,bamboozled
+59,befuddled,befuddled
+60,belly turning,belly turning
+61,bewildered,bewildered
+62,bewildermend,bewildered
+63,bewilderment,bewildered
+70,bweildered,bewildered
+64,blindsidedness,blindsidedness
+7,a little bored,bored
+65,bored,bored
+66,boredom,bored
+67,bothered,bothered
+68,breathless,breathless
+69,bummed out,bummed
+71,calm,calm
+72,calm otherwise,calm
+73,calmer,calm
+493,somewhat calm,calm
+76,careful,careful
+77,caught off gaurd,caught off guard
+78,caught off guard,caught off guard
+79,caushen,cautious
+80,causion,cautious
+81,caution,cautious
+82,cautious,cautious
+83,chased,chased
+84,chilled,chilled
+85,chills,chilled
+86,chippy,chipper
+87,clarity,clarity
+88,clausterphobic,claustrophobic
+89,claustrophobia,claustrophobic
+90,claustrophobic,claustrophobic
+91,clautrophobia,claustrophobic
+92,closterphobic,claustrophobic
+127,crostrophobic,claustrophobic
+93,clueless,clueless
+95,cold,cold
+96,coldness,cold
+97,colorful,colorful
+98,combative,combative
+99,comfort,comfortable
+100,comfortable,comfortable
+101,comical,comical
+102,compelled,compelled
+105,conentrated,concentration
+103,concern,concerned
+104,concerned,concerned
+375,nervous/concerned,concerned
+106,confident,confident
+94,cofusion,confused
+107,confused,confused
+108,confusion,confused
+109,confuzzled,confused
+110,contement cool part of the experience,content
+111,content,content
+112,contentment,content
+113,contentment because i thought the part was well set up,content
+114,conteted,content
+115,contmentent,content
+116,cool,cool
+117,cool/fascinated,cool
+118,cowardise,cowardice
+8,a little crammed,crammed
+119,crazy-eyed,crazy-eyed
+120,creeped,creeped out
+121,creeped-out,creeped out
+122,creeped out,creeped out
+123,creeps,creeped out
+124,creepy,creeped out
+125,cringe,cringe
+126,cringey,cringe
+128,curiosity,curious
+129,curious,curious
+130,curious about the context they were trying to illustrate,curious
+131,curiousity,curious
+132,dark,dark
+133,darkness,dark
+134,daze,dazed
+135,dazed,dazed
+136,defense,defensive
+137,defensive,defensive
+138,delighted,delighted
+140,disapointment,disappointed
+141,disappointed,disappointed
+142,disappointment,disappointed
+157,dissapointed,disappointed
+143,disbelief,disbelief
+144,discombobulated,discombobulated
+145,discombobulation,discombobulated
+146,discomfort,discomfort
+147,discontent,discontent
+356,mild disgust,disgust
+148,disgust,disgusted
+149,disgusted,disgusted
+482,slightly disgusted,disgusted
+150,dismat,dismay
+151,dismay,dismay
+152,disorianted,disoriented
+153,disorientation,disoriented
+154,disoriented,disoriented
+155,disorienting,disoriented
+160,dissorientation,disoriented
+156,displeasure,displeasure
+158,dissatisfied,dissatisfied
+159,dissociation,dissociation
+161,distaste,distaste
+162,distracted,distracted
+163,distress,distress
+164,disturbed,disturbed
+165,disturbed??,disturbed
+166,disturbing,disturbed
+167,dizziness,dizzy
+168,dizzy,dizzy
+169,dizzyness,dizzy
+171,dread,dread
+172,eagerness,eagerness
+173,ease,ease
+174,easy going,ease
+175,ecstatic,ecstatic
+176,eerie,eerie
+177,eerieness,eerie
+178,elevation,elevation
+179,embarassed,embarrassed
+180,embarassment,embarrassed
+181,embarrased,embarrassed
+182,embarrasment,embarrassed
+183,embarrassed,embarrassed
+184,embarrassment,embarrassed
+186,empathetic,empathy
+188,energized,energetic
+189,energy,energetic
+190,engaged,engaged
+191,enjoyment,enjoyment
+192,entertained,entertained
+193,entertainment,entertained
+194,enthusiasm,enthusiasm
+195,entranced,entranced
+197,euphoric,euphoric
+198,excited,excited
+199,excitement,excited
+200,exciting,excited
+201,excitment,excited
+202,"excitment ""a real chain saw""",excited
+207,exited,excited
+208,exitement,excited
+203,exhausted,exhausted
+204,exhilerated,exhilarated
+205,exhiliration,exhilarated
+206,exillerating,exhilarated
+209,expectant,expectant
+210,expectation,expectant
+211,expectation of something scarier to happen,expectant
+212,expecting,expectant
+213,exposed,exposed
+217,familiar,familiar
+218,familiarity,familiar
+117,cool/fascinated,fascinated
+216,facinated,fascinated
+219,fascinated,fascinated
+220,fascination,fascinated
+221,fast,fast
+6,a bit of fear,fear
+309,intense fear,fear
+348,little fear,fear
+222,fear,fearful
+223,fear for the actors,fearful
+224,fear he got a little to close,fearful
+225,fear of being hit,fearful
+226,fearful,fearful
+227,fearless,fearless
+228,fight or flight,fight or flight
+230,flight,fight or flight
+231,flight response,fight or flight
+229,flashing,flashing
+232,flush,flush
+233,focus,focused
+234,focused,focused
+235,frazzled,frazzled
+236,freaked,freakedout
+237,freaked out,freakedout
+238,freightened,frightened
+240,fright,frightened
+241,frightened,frightened
+242,frightful,frightened
+243,frozen,frozen
+244,frustrated,frustrated
+245,frustration,frustrated
+246,fulfilled,fulfilled
+247,fun,fun
+263,having fun,fun
+248,funny,funny
+249,funny/laughter,funny
+250,glad it was over,glad
+251,good,good
+252,grateful,grateful
+253,gross,grossed out
+254,grossed out,grossed out
+255,guarded,guarded
+256,happiness,happy
+257,happy,happy
+258,happy because i was having fun and it was exciting to have them actually evoke emotion,happy
+259,happy friendship,happy
+260,happyness,happy
+272,hippieness,happy
+261,hasty,hasty
+262,hatred,hatred
+267,helpless,helpless
+266,heistant,hesitant
+268,hesitant,hesitant
+269,hesitation,hesitant
+270,high-gaurd,high-guard
+271,hilarious,hilarious
+274,horrified,horrified
+275,horror,horrified
+276,humerous,humored
+277,humor,humored
+278,humored,humored
+279,humorous,humored
+280,hunger,hungry
+281,hungry,hungry
+282,hurried,hurried
+283,hurry,hurried
+284,hype,hype
+285,hysteria,hysterical
+286,hysterical,hysterical
+292,icky,icky
+294,iffy,iffy
+295,imbalance,unbalanced
+296,imbalanced,unbalanced
+297,imblance,unbalanced
+298,impatience,impatient
+299,impatient,impatient
+300,impending,impending
+301,impressed,impressed
+264,heart rate jump,increased heart rate
+265,heart rate rising,increased heart rate
+302,increased heart rate,increased heart rate
+303,indecisive,indecisive
+304,indifferent,indifferent
+305,infatuated,infatuated
+306,insecure,insecure
+307,instability,instability
+308,intense,intense
+310,intensity,intense
+314,intese,intense
+311,interest,interested
+312,interested,interested
+313,interesting,interested
+315,intimidated,intimidated
+316,intimidation,intimidated
+196,entrigued,intrigue
+317,intrigue,intrigue
+318,intrigued,intrigue
+319,intrigued - actual people upside down?,intrigue
+320,intruged,intrigue
+321,intruiged,intrigue
+322,irriation,irritated
+323,irritated,irritated
+324,isolated,isolated
+325,jarring,jarring
+326,jealousu,jealousy
+327,jealousy,jealousy
+328,jittery,jittery
+329,joufulm,joyful
+330,joy,joyful
+331,joy it was a good part in the experience,joyful
+332,joy/laughter,joyful
+333,joyful,joyful
+343,laughter/joy,joyful
+336,jumpscare,jump scare
+337,jumpscared,jump scare
+334,jumly,jumpy
+335,jump,jumpy
+338,jumpy,jumpy
+249,funny/laughter,laughable
+339,laugh,laughable
+340,laughable,laughable
+341,laughed,laughable
+342,laughter,laughable
+343,laughter/joy,laughable
+332,joy/laughter,laughter
+345,letdown,letdown
+346,light-hearted,light-hearted
+349,longing,longing
+350,lost,lost
+351,loud,loud
+352,mad,mad
+353,melancholy,melancholy
+354,melancoly,melancholy
+355,memory,memory
+360,miserable,miserable
+361,modest,modest
+362,mysterious,mysterious
+4,.,NA
+5,...,NA
+74,can't remember,NA
+75,can’t remember,NA
+170,don't touch anything,NA
+185,emotionless,NA
+187,enclosed waiting for someone to grab me,NA
+215,f u,NA
+239,friendship,NA
+273,historical interest,NA
+287,i'm really sorry i just cannot remember many more things that happened,NA
+288,i am about to pass away,NA
+289,i am dying and falling through the floor,NA
+290,i felt nothing intense,NA
+291,i literally have no idea,NA
+293,idk man,NA
+344,leadership,NA
+347,line leader,NA
+363,n/a,NA
+364,na,NA
+365,"na, my computer died before i could write more than one event",NA
+366,"na, my computer died before i got to write more than one event",NA
+371,need to recompose myself,NA
+372,need to respond,NA
+383,nothing,NA
+384,nothng,NA
+408,people touch,NA
+459,same thing,NA
+504,still no,NA
+541,torn between going ahead and waiting,NA
+585,urge to keep walking,NA
+586,urge to leave,NA
+587,urge to leave the room,NA
+588,urge to leave vicinity,NA
+590,void,NA
+594,wanting it to be over,NA
+595,wanting the loud noise to stop,NA
+596,wanting the sound to go away,NA
+597,wanting to be left alone,NA
+614,x,NA
+367,nausea,nauseous
+368,nauseated,nauseous
+369,nauseating,nauseous
+370,nauseous,nauseous
+214,extremely nervous,nervous
+373,nerves,nervous
+374,nervous,nervous
+375,nervous/concerned,nervous
+376,nervousness,nervous
+377,nice,nice
+378,non interested,uninterested
+379,nonchalant,nonchalant
+380,nostalgia,nostalgic
+381,nostalgic,nostalgic
+382,nosy,nosy
+385,numbness,numbness
+386,observant,observant
+387,odd,odd
+389,offense,offense
+388,off-guard,off-guard
+390,ominous,ominous
+391,on-edge,onedge
+393,on edge,onedge
+392,on-guard,on-guard
+394,out of control,uncontrolled
+395,out of place,out of place
+397,over it,over it
+396,over-stimulated,overstimulated
+398,overstimulated,overstimulated
+399,overwhelmed,overwhelmed
+400,overwhlemed,overwhelmed
+401,pain,pain
+402,panic,panicked
+403,panicked,panicked
+404,panicky,panicked
+405,paralyzed,paralyzed
+406,paranoid,paranoid
+407,pensive,pensive
+409,perplexed,perplexed
+410,petrified,petrified
+411,physical trembling,trembling
+412,pity,pity
+413,placid,placid
+414,pleasure,pleasure
+415,preparation,prepared
+416,prepared,prepared
+417,present,present
+419,proactive,proactive
+421,protective,protective
+9,a little proud that the actor saw scaring me as a challenge,proud
+418,pride,proud
+422,proud,proud
+423,puzzled,puzzled
+424,questioning,questioning
+425,quick,quick
+426,rambunctius,rambunctious
+427,rationalizing,rationalize
+428,rattled,rattled
+429,readiness,readiness
+430,readyness,readiness
+431,regret,regretful
+432,regretful,regretful
+433,relaxed,relaxed
+434,relief,relieved
+435,relief when he turned it off,relieved
+436,relieved,relieved
+437,relieving,relieved
+438,reluctance,reluctant
+439,reluctant,reluctant
+440,reminiscense,reminiscent
+441,reminiscent,reminiscent
+442,reminiscient,reminiscent
+443,remorse,remorse
+444,repulsion,repulsion
+445,repulsive,repulsion
+446,resentful,resentful
+447,resentment,resentful
+448,reserved,reserved
+449,resistant,resistant
+450,resolve,resolve
+451,respect,respect
+452,rowdy,rowdy
+453,run,run
+454,rush,rush
+2,"""sad""",sad
+455,sad,sad
+456,saddness,sad
+457,sadness,sad
+458,safe,safe
+460,sane,sane
+461,satisfied,satisfied
+420,probably a little scared,scared
+462,scared,scared
+463,scary,scared
+465,sensitivity,sensitivity
+466,serious,serious
+467,shaky,shaky
+357,mild shock,shocked
+464,schock,shocked
+468,shock,shocked
+469,shocked,shocked
+470,shook,shook
+471,short,short
+472,sick,sick
+473,sickness,sick
+474,silence,silent
+475,silenced,silent
+476,silent,silent
+477,silly,silly
+478,skeptical,skeptical
+479,skepticism,skeptical
+480,skip,skip
+481,sleepy,sleepy
+484,slow,slow
+485,slowed,slow
+486,sly,sly
+487,small,small
+488,smallness,small
+489,smiley,smiley
+490,sober,sober
+491,solemn,solemn
+492,somber,somber
+494,sorry,sorry
+495,spent from anxiety,spent
+496,spook,spooked
+497,spooked,spooked
+498,spooked!,spooked
+499,spooky,spooked
+500,starled,startled
+501,startled,startled
+502,startling,startled
+508,strartled,startled
+503,still,stillness
+358,mild stomach churning,stomach churning
+505,stomach turning,stomach churning
+506,strange,strange
+507,strangeness,strange
+509,stress,stressed
+510,stressed,stressed
+511,stressful,stressed
+512,stuck,stuck
+513,stunned,stunned
+514,sudden,sudden
+515,suprise,surprised
+516,suprise he addressed me directly,surprised
+517,suprise it actually turned on,surprised
+518,suprised,surprised
+519,surprise,surprised
+520,surprised,surprised
+521,surprising,surprised
+522,surreal,surreal
+523,suspense,suspense
+524,suspenseful,suspense
+525,suspension,suspense
+526,suspicion,suspicion
+527,suspicious,suspicion
+528,taken aback,taken aback
+529,tense,tense
+530,tension,tense
+531,terrible,terrible
+532,terrified,terrified
+533,terror,terrified
+534,that feeling of an acid trip,that feeling of an acid trip
+535,threatened,threatened
+536,thrill,thrilled
+537,thrilling,thrilled
+538,tight muscles and body language,tight muscles and body language
+539,timid,timid
+540,tired,tired
+542,tranquil,tranquil
+543,trapped,trapped
+43,"appreciative of the gore, but also mildly traumatizing",traumatic
+544,trepidation,trepidation
+545,trepidatious,trepidation
+546,triggered,triggered
+3,"""trippy""",trippy
+547,trippy,trippy
+548,unaffected,unaffected
+549,unamused,unamused
+550,unaware,unaware
+551,unbalance,unbalanced
+552,unbalanced,unbalanced
+553,uncertain,uncertain
+554,uncertainty,uncertain
+555,unclean,unclean
+556,uncomfertable,uncomfortable
+557,uncomfortable,uncomfortable
+558,uncomfortable when they were in my face,uncomfortable
+559,understanding,understanding
+560,underwhelmed,underwhelmed
+561,unease,uneasiness
+562,uneasiness,uneasiness
+564,uness,uneasiness
+565,unesse,uneasiness
+139,dis-ease,uneasy
+563,uneasy,uneasy
+566,unexpected,unexpected
+567,unfamiliar,unfamiliar
+568,unfocused,unfocused
+569,unhappiness,unhappy
+570,unhappy,unhappy
+571,unimpressed,unimpressed
+572,uninterested,uninterested
+573,unpleasant,unpleasant
+574,unpleasantness,unpleasant
+575,unprepared,unprepared
+576,unsafe,unsafe
+577,unsettled,unsettled
+578,unsettling,unsettled
+579,unstable,unstable
+580,unsteadiness,unsteady
+581,unsteady,unsteady
+582,unsure,unsure
+583,unsureness,unsure
+584,upset,upset
+589,urgency,urgency
+591,vulnerable,vulnerable
+592,waiting,waiting
+593,wanted,wanted
+599,warm,warm
+598,wariness,wary
+600,warry,wary
+601,wary,wary
+602,watchful,watchful
+603,weak,weak
+604,weariness,weary
+605,weary,weary
+606,weepy,weepy
+607,weird,weird
+608,weirded out,weirded out
+609,wonder,wonder
+610,wonderful,wonder
+611,woozy,woozy
+483,slightly worried,worried
+612,worried,worried
+613,worry,worried

@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Experiment Title -->
+  <title>Experiment</title>
+
+  <!-- Loading in libraries  -->
+    <script src="jspsych/dist/jspsych.js"></script> 
+    <script src="jspsych/dist/plugin-html-keyboard-response.js"></script>
+    <script src="jspsych/dist/plugin-video-keyboard-response.js"></script>
+    <script src="jspsych/dist/plugin-preload.js"></script>
+    <script src="jspsych/dist/plugin-fullscreen.js"></script>
+    <script src="jspsych/dist/plugin-browser-check.js"></script>
+    <script src="jspsych/dist/plugin-html-slider-response.js"></script>
+    <script src="jspsych/dist/plugin-html-button-response.js"></script>
+    <script src="jspsych/dist/plugin-survey-likert.js"></script>
+    <script src="jspsych/dist/plugin-survey-image-multi-select.js"></script> 
+    <script src="jspsych/dist/plugin-survey-text.js"></script>    
+    <script src="jspsych/dist/plugin-survey.js"></script>
+    <script src="jspsych/dist/plugin-image-button-response.js"></script>
+    <script src="jspsych/dist/plugin-modded-image-slider-response.js"></script>  
+    <script src="dataDownload.js"></script>    
+    <link href="jspsych/dist/jspsych.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://unpkg.com/@jspsych/plugin-survey@0.2.1/css/survey.css">
+    <script type="text/javascript" src="lib/vendors/jquery-2.2.0.min.js"></script>
+    <script src="https://pavlovia.org/lib/jspsych-7-pavlovia-2022.1.1.js"></script>
+
+
+  <!-- Loading in text, scales, labels, & functions  -->    
+    <script src="components/scales/ERQ.js"></script>
+    <script src="components/scales/DERS.js"></script>
+    <script src="components/scales/IUS.js"></script>
+    <script src="components/scales/Misc.js"></script>
+    <script src="components/scales/Demographics.js"></script>
+    <script src="components/Text.js"></script>
+
+</head>
+
+<!-- Determing general page style parameters -->
+<body style="background-color: rgb(200, 200, 200);">
+<script>
+
+// Whether this study is being run on Pavlovia
+var pav = true
+
+// Whether this study is being run on Prolific
+var prolif = true
+
+// Whether this study is in development
+var dev = false
+
+// Creating a timeline
+var timeline = [];
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - EXPERIMENT VARIABLES - - - - - - -  |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |   
+
+// Initiating jsPsych
+var jsPsych = initJsPsych({
+  timeline: timeline,
+  on_finish: function() {
+    if (prolif){
+      window.location = "https://app.prolific.com/submissions/complete?cc=C1L305DX"
+    }
+    if (pav == false){
+      if (prolif == false){
+        jsPsych.data.get().localSave('csv','data/'+ session_date +'.csv');
+      }
+    }
+  }
+});
+
+// capture info from Prolific
+if (prolif){
+  var subject_id = jsPsych.data.getURLVariable('PROLIFIC_PID');
+  var study_id = jsPsych.data.getURLVariable('STUDY_ID');
+  var session_id = jsPsych.data.getURLVariable('SESSION_ID');
+}
+
+// Capture today's date
+var session_date = new Date().toDateString();
+
+// Adding prolific data to our data
+if (prolif){
+  jsPsych.data.addProperties({
+    subject_id: subject_id,
+    study_id: study_id,
+    session_id: session_id
+  });
+}
+
+// Assigning participants to one of two conditions randomly
+var condition = jsPsych.randomization.shuffle(['Forecast', 'Experience'])[0];
+
+// Assigning participants to one of two self-other orders randomly
+var selfother = jsPsych.randomization.shuffle(['Self First', 'Other First'])[0];
+
+// Assigning participants to one of two startegy orders
+var Strats_Order = jsPsych.randomization.shuffle(['A','B'])[0];
+if (Strats_Order == 'A'){
+  var instr_Strats = instr_Strats_A
+}  
+else {
+  var instr_Strats = instr_Strats_B
+}
+
+// Assigning labels to random sides
+var labels_intense = jsPsych.randomization.repeat([style_response_labels + 'Not at all<br>Intense</p>', style_response_labels + 'Extremely<br>Intense</p>'], 1); 
+if (labels_intense[0] == style_response_labels + 'Not at all<br>Intense</p>'){
+    var reverse_TF = false
+    var labels_reduce =[style_response_labels + 'Not at all<br><Reduced</p>', style_response_labels + 'Extremely<br>Reduced</p>']
+    var labels_effort =[style_response_labels + 'Not at all<br>Effortful</p>', style_response_labels + 'Slightly<br>Effortful</p>', style_response_labels + 'Somewhat<br>Effortful</p>', style_response_labels + 'Moderately<br>Effortful</p>', style_response_labels + 'Considerably<br>Effortful</p>', style_response_labels + 'Very much<br>Effortful</p>', style_response_labels + 'Extremely<br>Effortful</p>']
+    var labels_success =[style_response_labels + 'Not at all<br>Successful</p>', style_response_labels + 'Slightly<br>Successful</p>', style_response_labels + 'Somewhat<br>Successful</p>', style_response_labels + 'Moderately<br>Successful</p>', style_response_labels + 'Considerably<br>Successful</p>', style_response_labels + 'Very much<br>Successful</p>', style_response_labels + 'Extremely<br>Successful</p>']
+}
+else {
+    var reverse_TF = true  
+    var labels_reduce =[style_response_labels + 'Extremely<br>Reduced</p>', style_response_labels + 'Not at all<br>Reduced</p>']
+    var labels_effort =[style_response_labels + 'Extremely<br>Effortful</p>', style_response_labels + 'Very much<br>Effortful</p>', style_response_labels + 'Considerably<br>Effortful</p>', style_response_labels + 'Moderately<br>Effortful</p>', style_response_labels + 'Somewhat<br>Effortful</p>', style_response_labels + 'Slightly<br>Effortful</p>', style_response_labels + 'Not at all<br>Effortful</p>']
+    var labels_success =[style_response_labels + 'Extremely<br>Successful</p>', style_response_labels + 'Very much<br>Successful</p>', style_response_labels + 'Considerably<br>Successful</p>', style_response_labels + 'Moderately<br>Successful</p>', style_response_labels + 'Somewhat<br>Successful</p>', style_response_labels + 'Slightly<br>Successful</p>', style_response_labels + 'Not at all<br>Successful</p>']
+}
+    
+// Assigning regulation strategy labels to random sides
+var labels_strats = jsPsych.randomization.sampleWithoutReplacement([style_response_labels + 'Reappraisal</p></font>', 
+                                                                    style_response_labels + 'Distraction</p></font>',
+                                                                    style_response_labels + 'Neither</p></font>'], 3);  
+
+// If they are in the experience condition ...
+if (condition == "Experience") {
+    // Assigning an order to the strategy reminders that matches button orders
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 0 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 1){
+        var instr_StrategyDesc = instr_StrategyDesc_Experience_A
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 0 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 2){
+        var instr_StrategyDesc = instr_StrategyDesc_Experience_B
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 1 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 0){
+        var instr_StrategyDesc = instr_StrategyDesc_Experience_C
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 2 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 0){
+        var instr_StrategyDesc = instr_StrategyDesc_Experience_D
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 1 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 2){
+        var instr_StrategyDesc = instr_StrategyDesc_Experience_E
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 2 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 1){
+        var instr_StrategyDesc = instr_StrategyDesc_Experience_F
+    }    
+    var text_Strategy = text_Strategy_Experience
+    var text_Reduce = text_Reduce_Experience
+    var text_Effort = text_Effort_Experience
+    var text_Success = text_Success_Experience
+  }
+else {
+    // Assigning an order to the strategy reminders that matches button orders
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 0 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 1){
+        var instr_StrategyDesc = instr_StrategyDesc_Forecast_A
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 0 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 2){
+        var instr_StrategyDesc = instr_StrategyDesc_Forecast_B
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 1 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 0){
+        var instr_StrategyDesc = instr_StrategyDesc_Forecast_C
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 2 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 0){
+        var instr_StrategyDesc = instr_StrategyDesc_Forecast_D
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 1 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 2){
+        var instr_StrategyDesc = instr_StrategyDesc_Forecast_E
+    } 
+    if (labels_strats.indexOf(style_response_labels + 'Reappraisal</p></font>') == 2 & 
+        labels_strats.indexOf(style_response_labels + 'Distraction</p></font>') == 1){
+        var instr_StrategyDesc = instr_StrategyDesc_Forecast_F
+    }    
+    var text_Strategy = text_Strategy_Forecast
+    var text_Reduce = text_Reduce_Forecast
+    var text_Effort = text_Effort_Forecast
+    var text_Success = text_Success_Forecast
+}
+
+// Creating an empty array in which to store intensity values that I'll want to reference at the end of the project
+const Intense_Stims = []
+
+// Denoting the filepaths of our video stimuli as an array
+var videoStimuli = ['ARF1665', 'CNL1892', 'HIU8424', 'FGV3524'];
+
+// Randomizing the order of our video stimuli and instruction order
+videoStimuli = jsPsych.randomization.shuffle(videoStimuli);
+
+// Creating an empty array in which to store screenshots that I'll want to reference at the end of the project
+const Screenshot_Stims = []
+for (var i = 0; i < videoStimuli.length; i++){
+  Screenshot_Stims.push('components/screenshots/'+ videoStimuli[i] +'.png')
+}
+
+// Assigning screen dimensions
+const width = 1250;
+const height = 700;
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - EXPERIMENT FUNCTIONS  - - - - - - - |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |  
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - | 
+// | - - - - -  Quality Assuarance Measures - - - - - - -| 
+
+// If the study is being ran on pavlovia
+if (pav){
+  // Initiate connection with pavlovia.org
+  var pavlovia_init = {
+    type: jsPsychPavlovia,
+    command: "init",
+    data: {
+        trial_id: "pavlovia_init"
+    },
+  };
+
+  // Close connection with pavlovia.org
+  var pavlovia_finish = {
+    type: jsPsychPavlovia,
+    command: "finish",
+    data: {
+        trial_id: "pavlovia_finish"
+    },
+	};
+}
+
+// Preloading our video stimuli
+var preload = {
+  type: jsPsychPreload,
+  auto_preload: true,
+  data: {task: 'Preload',
+         condition: condition},
+};
+  
+// Making the browser fullscreen to limit distractions
+var enter_fullscreen = {
+    type: jsPsychFullscreen,
+    fullscreen_mode: true,
+    data: {task: 'Fullscreen'},
+    on_finish: function(data) {
+      // Getting current time
+      var today = new Date();
+      var curr_time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+      data.time = curr_time
+    }
+  }
+
+// Checking whether the browser they are accessing this with is chrome and not a mobile device and meets out minimum dimension criteria
+var browser_check = {
+    type: jsPsychBrowserCheck,
+    minimum_width: width,
+    minimum_height: height,
+    inclusion_function: (data) => {
+      return ((data.browser == 'chrome' || data.browser == 'firefox' || data.browser == 'safari' || data.browser == 'edge') && data.mobile === false)
+    },
+    exclusion_message: (data) => {
+      if (data.mobile){
+        return error_Laptop;
+      } else if (data.browser !== 'chrome' && data.browser !== 'firefox' && data.browser !== 'safari' && data.browser !== 'edge'){
+        return error_Browser;
+      }
+    },
+    data: {task: 'Browser_Check'},
+  };
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - | 
+// | - - - - - Consent & Condition Assignment - - - - - -|
+   
+// Giving a warning regarding content in these specific stimuli, which I think is important to remind people of before they consent, given that this is a general consent for multiple projects.
+var instr_WarningDisplay = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: instr_Warning,
+    choices: [' '],
+    data: {task: 'Instruction'},
+};
+
+// A warning that you can skip the videos if you so choose
+if (dev){
+    var View_VideosWarning = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: instr_ViewVideosWarning,
+        choices: [' '],
+        data: {task: 'Skip_Notice'},
+    };
+}
+
+// Asking people whether they consent to study participation
+var consent = {
+  type: jsPsychImageButtonResponse,
+  stimulus: 'components/consent/consent.png',
+  upper_prompt: instr_Consent,
+  choices: labels_Consent,
+  render_on_canvas:false,
+  data: {task: 'Consent'},
+  on_finish: function (data) {
+    // Check the participant's response
+    if (data.response == 1) {
+      jsPsych.endExperiment(instr_NoConsent);
+    }
+  }
+}
+ 
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// |  - - - - Primary Task Trials  - - - - - -|
+
+// Giving instructions
+var instr_ExpStartDisplay = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: instr_ExpStart,
+    choices: [' '],
+    data: {task: 'Instr_ExpStart'},
+};
+
+// Giving the option to skip the video
+if (dev){
+    var View_Videos = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: instr_ViewVideos,
+        choices: labels_ViewVideos,
+        data: {task: 'Skip_Video'},
+        on_finish: function(data){
+          if (data.response == labels_ViewVideos.indexOf(style_response_labels + 'View</p></font>')){
+            data.choice = "View"
+          }
+          else {
+            data.choice = "Skip"
+          }
+
+        }
+    };
+}
+
+// Giving task instruction reminders for first video
+var instr_PreTrial_1st = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: instr_Video_Reminder_1st,
+    choices: [' '],
+    data: {task: 'Instr_Reminder'},
+};
+
+// Giving task instruction reminders for other videos
+var instr_PreTrial_Not1st = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: instr_Video_Reminder_Not1st,
+    choices: [' '],
+    data: {task: 'Instr_Reminder'},
+};
+
+// Assessing negative emotional responses before videos
+var Outcome_Intense_Baseline = {
+  type: jsPsychHtmlSliderResponse,
+  stimulus: text_Intense_Baseline,
+  require_movement: true,
+  labels: labels_intense,
+  show_value: true,
+  reverse_value: reverse_TF,
+  data: {task: 'Intensity_Baseline',
+               labels: labels_intense},
+};
+
+// Assessing negative emotional responses to video
+var Outcome_Intense_Stim = {
+  type: jsPsychHtmlSliderResponse,
+  stimulus: text_Intense_Stim,
+  require_movement: true,
+  labels: labels_intense,
+  show_value: true,
+  reverse_value: reverse_TF,
+  data: {task: 'Intensity_Video',
+               labels: labels_intense},
+  on_start:function(trial){
+      trial.prompt = prompt_IntenseVideo + (jsPsych.data.get().last(2).values()[0].response) + '</strong></font></span></p>'
+  },
+  on_finish: function(data){
+      Intense_Stims.push(data.response)
+    }
+};
+
+// Instructions for individual difference measures
+var instr_IndDiffDisplay = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: [instr_IndDiff],
+  choices: [' '],
+  data: {task: 'Instr_IndDiffs'},
+};
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// |  - - - - - - - - -  Conclusion - - - - - - - - - - -|
+
+// Closing the experiment
+var trial_after_fullscreen = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: instr_ExpEnd,
+  choices: [' '],
+  data: {task: 'Instr_Closure'},
+}
+
+// Exiting Full Screen
+var exit_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: false,
+  delay_after: 0,
+  data: {task: 'Fullscreen'},
+  on_finish: function(data) {
+      // Getting current time
+      var today = new Date();
+      var curr_time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+      data.time = curr_time
+  }
+}
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - EXPERIMENT TIMELINE - - - - - - - - |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |    
+
+  // Initiating Pavlovia
+  if (pav){
+    timeline.push(pavlovia_init);
+  }
+
+  // Preloading our video stimuli
+  timeline.push(preload);
+
+// | - - - - - Quality Assuarance Measures - - - - - -|
+
+  // Making the browser fullscreen to limit distractions
+  timeline.push(enter_fullscreen);
+
+  // Checking whether the browser they are accessing this with is chrome and not a mobile device and meets out minimum dimension criteria
+  timeline.push(browser_check);
+
+// | - - - - - Consent - - - - - -|  
+
+  // Present the warning that you can skip videos for the sake of piloting
+  if (dev){
+    timeline.push(View_VideosWarning);
+  }
+
+  // Giving a warning regarding content in these specific stimuli, which I think is important to remind people of before they consent, given that this is a general consent for multiple projects.
+  timeline.push(instr_WarningDisplay);
+  
+  // Asking people whether they consent to study participation
+  timeline.push(consent);
+
+// | - - - - - Instructions - - - - - -|
+    
+  // Iterating through our sequentially-ordered array of initial instructions
+  for (var i = 0; i < instr_Intro.length; i++) {
+    var instr_IntroDisplay = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: instr_Intro[i],
+      choices: [' '],
+      data: {task: 'Instr_Task'},
+    };
+    timeline.push(instr_IntroDisplay);
+  }
+
+// | - - - - - Primary Task Trials - - - - - -|
+  
+  // Giving practice instructions
+  timeline.push(instr_ExpStartDisplay);
+
+  // Iterating through our randomly-ordered array of video stimuli
+  for (var i = 0; i < videoStimuli.length; i++) {
+
+    // Again checking the browser dimensions before the video plays again to make sure that the participant can see everything
+    timeline.push(browser_check);
+
+    // Checking if this is the first trial
+    if (i == 0){
+
+      // If it is, push the first instruction type
+      timeline.push(instr_PreTrial_1st)
+
+    }
+
+    // If this is not the first trial
+    if (i > 0){
+
+      // If it is, push the first instruction type
+      timeline.push(instr_PreTrial_Not1st)
+
+    }
+    
+    // Assessing negative emotional responses at baseline
+    timeline.push(Outcome_Intense_Baseline);
+
+    // Having participants watch the clip while attempting to self-regulate
+    var Video = {
+      type: jsPsychVideoKeyboardResponse,
+      stimulus: ['components/stim/' + videoStimuli[i] + '.mp4'],
+      choices: 'NO_KEYS',
+      width: width,
+      height: height,
+      autoplay: true,
+      controls: false,
+      trial_ends_after_video: true,
+      data: {task: 'Stimulus'},
+    };
+
+    // Presenting the option to skip videos if needed
+    if (dev){
+      timeline.push(View_Videos);
+
+      // Conditional function to handle skipping videos
+      var If_Skipped = {
+        timeline: [Video],
+        conditional_function: function(){
+            // If the last value recorded within our data matches the index of choice Neither ...
+            if (jsPsych.data.get().last(1).values()[0].response == labels_ViewVideos.indexOf(style_response_labels + 'View</p></font>')) {
+                // ... run this node within the timeline
+                return true;
+            } 
+            // Otherwise ...
+            else {
+                // ... do not run this node in the timeline
+                return false;
+            }
+        }
+      };
+      timeline.push(If_Skipped);
+    }
+
+    // Play video
+    if (dev == false){
+      timeline.push(Video);
+    }
+
+    // Assessing negative emotional responses to video
+    timeline.push(Outcome_Intense_Stim);
+
+  }
+
+  // Iterating through our sequentially-ordered array of instructions
+  for (var i = 0; i < instr_Strats.length; i++) {
+    var instr_StratsDisplay = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: instr_Strats[i],
+      choices: [' '],
+      data: {task: 'Instr_StratDesc'},
+    };
+    timeline.push(instr_StratsDisplay);
+  }
+
+  // Iterating through video related questions
+  for (var i = 0; i < videoStimuli.length; i++) {
+    
+    // Assessing which regulation strategy people chose
+    var Outcome_Strategy = {
+      type: jsPsychImageButtonResponse,
+      stimulus: 'components/screenshots/' + videoStimuli[i] + '.png',
+      stimulus_height: 250,
+      upper_prompt:text_Strategy, 
+      lower_prompt: instr_StrategyDesc,
+      choices: labels_strats,
+      data: {task: 'Strategy_Choice',
+             choices: labels_strats},
+    };
+    timeline.push(Outcome_Strategy);
+
+    // Assessing regulated negative emotional responses to video
+    var Outcome_Intense_Reduce = {
+        type: jsPsychImageSliderResponse,
+        stimulus: 'components/screenshots/' + videoStimuli[i] + '.png',
+        stimulus_height: 250,
+        upper_prompt: text_Reduce, 
+        require_movement: true,
+        labels: labels_reduce,
+        show_value: true,
+        reverse_value: reverse_TF,
+        data: {task: 'Intensity_Reduction',
+               labels: labels_reduce,
+              condition: text_Reduce},
+    };
+
+    // Assessing how effortful participants felt that the strategy was
+    var Outcome_Effort_Likert = {
+        type: jsPsychSurveyLikert,
+        stimulus: 'components/screenshots/' + videoStimuli[i] + '.png',
+        stimulus_height: 250,
+        questions:[{prompt: text_Effort, name: 'Outcome_Effort', labels: labels_effort}],
+        data: {task: 'Effort',
+               labels: labels_effort,
+               condition: text_Effort},
+    };
+    
+    // Assessing how successful participants felt that the strategy was
+    var Outcome_Success_Likert = {
+        type: jsPsychSurveyLikert,
+        stimulus: 'components/screenshots/' + videoStimuli[i] + '.png',
+        stimulus_height: 250,
+        questions:[{prompt: text_Success, name: 'Outcome_Success', labels: labels_success}],
+        data: {task: 'Success',
+               labels: labels_success,
+               condition: text_Success},
+    };
+
+    // Conditional function to handle regulation strategy-related questions
+    var If_Regulated = {
+      timeline: [Outcome_Intense_Reduce, Outcome_Effort_Likert, Outcome_Success_Likert],
+      conditional_function: function(){
+          // If the last value recorded within our data matches the index of choice Neither ...
+          if (jsPsych.data.get().last(1).values()[0].response == labels_strats.indexOf(style_response_labels + 'Neither</p></font>')) {
+              // ... do not run this node within the timeline
+              return false;
+          } 
+          // Otherwise ...
+          else {
+              // ... do run this node in the timeline
+              return true;
+          }
+      }
+    };
+
+    // Adding questions conditional upon regulation having occurred
+    timeline.push(If_Regulated);
+  }
+
+  // Assessing negative emotional responses at baseline
+  timeline.push(Misc_Examples);
+
+// | - - - - - Individual Difference Measures - - - - - -|
+
+  // Instructions for individual difference measures
+  timeline.push(instr_IndDiffDisplay);
+
+  // Individual Difference Measures & demographics
+  timeline.push(ERQ);
+  timeline.push(DERS);
+  timeline.push(IUS);
+  timeline.push(demographics);
+
+  // Creating a question item to measure familiarity with any videos
+  timeline.push(Misc_Familiar_Any);
+
+  // Conditional function to assess which specific videos people are familiar with
+  
+// Assessing which specific videos people are familiar with
+var Misc_Familiar_Specific = {
+    type: jsPsychSurveyImageMultiSelect,
+    questions: [
+      {
+        prompt: size_scale_questions + 'Which video were you familiar with? Select all that apply.</p>', 
+        options: Screenshot_Stims, 
+        options_height: 200,
+        options_width: 480,
+        required: true,
+      }, 
+    ],
+    data: {task: 'Misc_Familiar_Specific',
+           choices: Screenshot_Stims},
+};
+
+// Conditional function to handle regulation strategy-related questions
+var If_Familiar = {
+    timeline: [Misc_Familiar_Specific],
+    conditional_function: function(){
+        // If the last value recorded within our data matches the index of choice Neither ...
+        if (jsPsych.data.get().last(1).values()[0].response == YesNo.indexOf(size_scale_labels + 'Yes</p>')) {
+            // ... run this node within the timeline
+            return true;
+        } 
+        // Otherwise ...
+        else {
+            // ... do not run this node in the timeline
+            return false;
+        }
+    }
+  };
+
+  timeline.push(If_Familiar);
+
+  // Assessing Horror Enjoyment
+  timeline.push(Misc_Horror_Enjoy);
+
+  // Assessing 
+  timeline.push(Misc_Attention_Check);
+
+  // Assessing audio medium (under the assumption that this might relate to immersion, which might relate to intensity)
+  timeline.push(Misc_Audio);
+
+  // Assessing difficulties with the task
+  timeline.push(Misc_Difficulties);
+
+  // Assessing whether the participant has any lingering questions
+  timeline.push(Misc_Questions);
+
+
+// | - - - - - Exiting - - - - - -|
+
+  // Closing the experiment
+  timeline.push(trial_after_fullscreen);
+  
+  // Exiting Full Screen
+  timeline.push(exit_fullscreen);
+  
+  // Close connection with pavlovia
+  if (pav){
+    timeline.push(pavlovia_finish);
+  }
+
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |
+// | - - - - - - - - RUNNING EXPERIMENT  - - - - - - - - |
+// | - - - - - - - - - - - - - - - - - - - - - - - - - - |   
+
+    // Executing the timeline
+    jsPsych.run(timeline);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+"trial_id","trial_type","trial_index","time_elapsed","internal_node_id","subject_id","study_id","session_id","success","timeout","failed_images","failed_audio","failed_video","task","condition","rt","time"
+"pavlovia_init","pavlovia","0","1159","0.0-0.0","5c2414b8101408000140617a","652d46c8909a0ef52332ec58","652f0d4903c40ed37b7715b8","","","","","","","","",""
+"","preload","1","1943","0.0-1.0","5c2414b8101408000140617a","652d46c8909a0ef52332ec58","652f0d4903c40ed37b7715b8","true","false","[]","[]","[]","Preload","Experience","",""
+"","fullscreen","2","5514","0.0-2.0","5c2414b8101408000140617a","652d46c8909a0ef52332ec58","652f0d4903c40ed37b7715b8","true","","","","","Fullscreen","","2562","18:44:0"
