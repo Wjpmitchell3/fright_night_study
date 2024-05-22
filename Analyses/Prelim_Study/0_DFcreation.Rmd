@@ -1,0 +1,651 @@
+---
+title: "ER Choice v. Usage - Prelim Study Dataframe Creation"
+author: "W.J. Mitchell"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+#NOTES: 
+  1. Before loading the data, I replaced all commas in the .csv file with semicolons, so that they would not be read as starting new cells
+  2. Pts. 1320, 1321, 1354, and 1356 have issues with their data that make it likely unusable, including having left the study early or not completed all study procedures
+  3. I replaced all empty cells with "0" in excel prior to processing because read.csv was ignoring entire rows of data for some reason. 
+
+#VARIABLE ABBREVIATIONS
+  Num = Number | Pts = Participants  |  Emo = Emotion  |   Raw = Unedited
+  Mod = Modified  |  FN = Fright Night | Cols = Columns | Quest = Questions
+
+```{r Setup}
+  # Setting up our libraries
+  library(here)
+  library(foreign)
+  library(tidyverse)
+  options(scipen=100)
+  options(digits=3)
+```
+
+```{r Constants}
+  # Creating a array of questions to pull from
+  Questions <- c("EndorsedEmos", "OtherDesc", "AlertFeel", "AlertReg", "AmuseFeel",
+                 "AmuseReg", "ExciteFeel", "ExciteReg", "AggressFeel",
+                 "AggressReg", "AnnoyFeel", "AnnoyReg", "UpsetFeel", "UpsetReg",
+                 "NervFeel", "NervReg", "GrossFeel", "GrossReg", "WhelmFeel",
+                 "WhelmReg", "PanicFeel", "PanicReg", "TenseFeel", "TenseReg",
+                 "ShockFeel", "ShockReg", "OtherFeel", "OtherReg", "FearFeel", 
+                 "FearReg", "RegStrat")
+
+  # Specifying the names of the different emotion categories
+  Emotions <- c("Alert", "Amuse", "Excite", "Aggress", "Annoy", "Upset",
+                "Nerv", "Gross", "Whelm", "Panic", "Tense", "Shock", "Other")
+  
+  # Specifying the names of the different event categories
+  Events <- paste("Event", 1:10, sep = "")
+```
+
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like `C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to. 
+
+``` {r Setting Working Directory}
+  # Identifying our main directory
+  WorkDir <- here::here()
+
+  # Identifying specific directories to read and write from
+  Export <- paste0(WorkDir, "/Data/Prelim_Study/Raw/")
+  Import <- paste0(WorkDir, "/Data/Prelim_Study/Source/")
+```
+
+# ----- LOADING DATA -----
+    
+NOTE:`setwd()` doesn't play well with R Markdown. You can use it, but you need to respecify with every chunk and it still outputs warning messages even when everything's perfect, so I've opted to just not use it enter the full filepath each time instead. 
+``` {r Loading Raw Data}
+  # Reading raw data
+  df <- read.csv(file = paste0(Import, "df_raw.csv"), 
+                 header = T, sep=",", 
+                 stringsAsFactors = F,
+                 na.strings="")
+```
+
+``` {r Removing Non-Completers and Prelim Data}
+  # Subsetting data from participants who did not complete study procedures, entries that were not complete, and trials completed by research staff
+  df <- subset(df, df$QID343 != "1320" &
+                   df$QID343 != "1321" &
+                   df$QID343 != "1354" &
+                   df$QID343 != "1356" &
+                   df$Progress == "100" &
+                   df$Status == "0" &
+                   (is.na(df$RecipientLastName) |
+                   df$RecipientLastName == "Stasiak"))
+```
+
+```{r Removing Superfluous Rows Containing Things Like Time and ID Variables}
+  # Showing the contents of columns 1 through 17
+  head(df[1:17])
+
+  # Removing columns without usable data
+  df <- df[,-c(1:17)]
+```
+
+NOTE: Participants were asked to describe ten events within the six sections of the haunted house in whatever order they could recall. Afterwards, we asked them to reorder those sections and events in chronological order. When participants were asked to reorder the sections and events, the sections and events appeared on the screen in qualtrics in a randomized order. When Qualtrics outputs the reordered data from participants' rearranging, we don't see the names of the sections or events reordered; we see the relative position in which those names were presented to participants reordeded. So if the chronological fourth section was randomly placed in the second position during this task and the participant correctly moved it to the fourth position, we would see a 2 in slot 4, rather than a 4 in slot 4. The only way to identify the random order participants saw is to go back into qualtrics, look at the subjective presentation order each participant saw, and manually recode it, which is what we did. As such, the current data in section and event order is pretty useless. After recoding, Section 1 refers to the first chronological section and Event 1 refers to the first event the participant reported and we'll bring those in later. Notably this data won't tell us the order in which participants chose to reorder the events and sections; we're just making sure that a 1 means the same thing for every participant, and a 2 means the same thing and so on. 
+
+```{r Removing unstandardized event and section data}
+  # Showing that we're specifically targetting the event and section columns
+  head(df[c(2:7, 338:347)])  
+
+  # Removing unstandardized event and section data
+  df <- df[,-c(2:7, 338:347)]
+```
+
+`````` {r Using Header From Previous Dataframe}
+  # Reformatting headers
+  names(df) <- c("PID", 
+                    sort(c(paste("Event",1:9,".Desc",sep=""), 
+                                  paste("Event",1:9,".Key",sep=""))),
+                    "Event10.Desc","Event10.Key",
+                     paste("Event1", Questions, sep="."),
+                     paste("Event2", Questions, sep="."),
+                     paste("Event3", Questions, sep="."),
+                     paste("Event4", Questions, sep="."),
+                     paste("Event5", Questions, sep="."),
+                     paste("Event6", Questions, sep="."),
+                     paste("Event7", Questions, sep="."),
+                     paste("Event8", Questions, sep="."),
+                     paste("Event9", Questions, sep="."),
+                     paste("Event10", Questions, sep="."))
+
+  # Examining column names
+  names(df)
+```
+
+# ----- ADDING EVENT AND SECTION REORDERING -----
+
+Now that we have appropriate column names, we can begin to introduce and merge the appropriately standardized events and sections
+
+``` {r Loading Event Ordering Data}
+  # Reading in manually standardized event data
+  EventOrdering <- read.csv(file = paste0(Import, "reorder_events.csv"), 
+                          header = T, sep=",", 
+                          stringsAsFactors = F)
+```
+
+``` {r Creating a Variable with Event Column Names}
+  # Creating a Variable with Event Column Names
+  EventCols <- names(EventOrdering[,c(2:11)])
+```
+
+``` {r Merging Events with the Main Dataframe}
+  # Merging the event data with the main dataframe
+  df <- merge(x = df,
+              y = EventOrdering, 
+              by = "PID")
+  rm(EventOrdering)
+```
+
+``` {r Loading Section Ordering Data}
+  # Reading in manually standardized section data
+  SectionOrdering <- read.csv(file = paste0(Import, "reorder_sections.csv"), 
+                              header = T, sep=",", 
+                              stringsAsFactors = F,
+                              na.strings="")
+```
+
+``` {r Creating a Variable with Section Column Names}
+  # Creating a Variable with Section Column Names
+  SectCols <- names(SectionOrdering[,c(2:7)])
+```
+
+``` {r Merging Sections with the Main Dataframe}
+  # Merging the section data with the main dataframe
+  df <- merge(x = df,
+              y = SectionOrdering, 
+              by = "PID")
+  rm(SectionOrdering)
+```  
+
+# ----- REORGANIZING DATAFRAME -----
+
+NOTE: Okay, now that the events and sections have been standardized in the dataframe we just made, we are going to reorganize them in the subjective chronological that each participant reported them occurring in. 
+
+``` {r Creating a Temporary Dataframe}
+  # Creating a temporary empty dataframe of the same dimensions as the current 
+  df.temp  <- data.frame(matrix(NA, 
+                                nrow = nrow(df), 
+                                ncol = ncol(df), 
+                                dimnames = list(rownames(df), 
+                                                names(df))), 
+                         stringsAsFactors = F)
+```
+
+NOTE: Some of the data will be unaffected by the reordering, so we're migrating it as it appears right now
+``` {r Migrating Non-Event Data}
+  # Checking the data that's unaffected by reordering
+  head(df[,c(1:21,332:347)])
+
+  # Migrating data that's unaffected by reordering
+  df.temp[,c(1:21,332:347)] <- df[,c(1:21,332:347)]
+```
+
+Now, we have this sorting function that will rearrange the relevant data. It looks complicated, but what it does is fairly simple. With it's first iteration, i, it will progress row by row, which is equivalent to cycling through each participant. Next, with its section iteration, r, it will cycle through each event column (these start at column number 332). With it's third iteration, it will cycle through each possible event number. For each event for each person, it will cycle through all of the event numbers (k) until it finds one that matches the event (r). Once it does find a match, it then will copy the data from the original dataframe (df) for event k to the new temporary dataframe in the position of event r. Any given event's k value represents the position in which it was originally recalled, while it's r value represents the position the person indicated it occurred chronologically. Luckily, each event was asked the exact same questions in the exact same order, so we can just more or less cut and paste the data for the length of the Questions variable.    
+
+``` {r Reordering Event Data}
+  # Iterating through participants
+  for (i in 1:nrow(df)){
+    # Iterating through reordered event positions
+    for (r in 1:10){ 
+      # Iterating through recalled event positions
+      for (k in 1:10){
+        # Finding when the recorded event position matches the recalled event positions
+        if (df[i,(r + 331)] == k)
+          # Copying data from the original dataframe into the reordered dataframe with respect to chronological order.
+          df.temp[i,((r-1) * length(Questions)) + 22:52] <- df[i,((k-1) * length(Questions)) + 22:52]
+      }
+    }
+  }
+```
+
+Now we can have the temporary dataframe replace the original
+``` {r Replacing our Temporary Dataframe}
+  # Overwriting now obsolete dataframe
+  df <-df.temp
+
+  # Removing variables we no longer need
+  rm(df.temp,Questions,i,r,k)
+```  
+  
+# ----- REFORMATING EMOTIONS ENDORSED -----
+  
+The emotions that participants had endorsed are currently captured in one column for each event, which is unhelpful for analysis. Here, I'm creating a unique dummy variable for each possible emotion for each event.  
+  
+``` {r Defining PID Variable}
+  # Defining a PID Variable
+  (PID <- df$PID)
+```   
+
+``` {r Creating a Variable to Identify Individual Emotion Endorsement Columns}
+  # Creating a Variable to Identify Individual Emotion Endorsement Columns
+  EmotionColumns <- NULL
+  for (i in Events){
+    for (t in Emotions){
+      EmotionColumns <- c(EmotionColumns, paste(i,".",t,sep=""))
+    }
+  }
+
+  # Checking results
+  EmotionColumns
+```  
+  
+``` {r Adding Dummy Emotion Columns to Dataframe}  
+  # Adding Dummy Emotion Columns to Dataframe
+  for (i in EmotionColumns)
+    df[,i] <- NA
+  rm(EmotionColumns,i)
+```  
+  
+Now we have these empty dummy emotion columns, but we want to know if the participant endorsed the emotion. This again looks very complicated, but it's essentially just cycling through each participant (p), through participant's events (e), and through each of the emotions a participant might have experienced in that event (n). It's then checking whether there's an NA value in the cell for that emotion for that event for that participant. If there is, we leave the endorsement as NA. If there isn't we change the endorsement to a 1.
+
+``` {r Adding Emotion Dummy Column Data}
+  # For each participant
+  for (p in 1:nrow(df)){
+    # For each event
+    for (e in 1:length(Events)){
+      # For each emotion
+      for (n in 1:length(Emotions)){
+        # If they reported an emotional intensity
+        if (!is.na(df[p, (((e - 1) * 31) + 22 + (n * 2))]))
+          # Mark the emotion as endorsed
+          df[p,(347 + ((e - 1) * 13) + n)] <- 1
+        # If they didn't report an emotional intensity
+        if (is.na(df[p, (((e - 1) * 31) + 22 + (n * 2))]))
+          # Mark it as not endorsed.
+          df[p,(347 + ((e - 1) * 13) + n)] <- NA
+      }
+    }
+  }
+
+# Remove superfluous variables
+rm(Emotions, e, n, p, t)
+``` 
+
+However, we can't use the above method for fear because, due to a team decision early on relevant for the memory team, people were asked how intense their fear wasn't even if it wasn't a salient emotion that they endorsed. That doesn't work well for us and our analyses though; we only want to study emotions people endorsed. To my horror, I realized in preparing this script for the public that I originally manually coded this (This was tied in time for my first R project, so I probably didn't know how to use the stringr function very well to isolate fear endorsements), but I've now used stringr to isolate them; albeit still in a very dumb roundabout way because my brain's a little broken right now. 
+
+``` {r Creating a Dataframe Containing Dummy Variables for the Presence of Fear}
+# Creating a dataframe to house fear endorsements and PIDs
+FearEndorsements <- df[, grep("EndorsedEmos|PID", names(df))]
+names(FearEndorsements) <- c("PID", paste0("Event", 1:10, ".Fear"))
+ 
+# Iterating through each row ...
+for (i in 1:nrow(FearEndorsements)){
+  # and through each column ...
+  for (j in 2:ncol(FearEndorsements)){
+    # and if the 13th emotion is not endorsed ...
+    if (!str_detect(string = FearEndorsements[i,j],
+                   pattern = ".13.|13|.13|13.")){
+      # Mark the cell as NA.
+      FearEndorsements[i,j] <- NA
+    }
+    # and if the 13th emotion is endorsed ...
+    if (str_detect(string = FearEndorsements[i,j],
+                   pattern = ".13.|13|.13|13.") & !is.na(FearEndorsements[i,j])){
+      # Mark the cell as "1".
+      FearEndorsements[i,j] <- "1"
+    }
+  }
+}
+rm(i,j)
+```
+
+Now we want to merge those 1's and NA's with the actual dataframe
+
+``` {r Merging Fear Endorsements with the Main Dataframe}
+  # Merging the two dataframes by PID
+  df <- merge(x = df, 
+              y = FearEndorsements, 
+              by = "PID")
+rm(FearEndorsements)
+```
+
+We now don't really have much use for the endorsed emotions columns, so I'm just gonna remove those
+
+``` {r Removing Endorsement Rows}
+  # Identifying the endorsed emotions columns
+  RemoveRows <- grep("EndorsedEmos", names(df))
+
+  # Removing those from the dataframe.
+  df <- df[,-c(RemoveRows)]
+  rm(RemoveRows)
+```
+
+# ----- ADDING SUPPLEMENTARY DATA -----
+
+We now have a plethora of supplementary data that was collected via Google Forms that we want to integrate
+
+``` {r Loading Supplementary Data}
+  # Loading supplementary data 
+  df_supp <- read.csv(file = paste0(Import, "df_raw_supp.csv"), 
+                             header = T, 
+                             sep=",", 
+                             stringsAsFactors = F)
+``` 
+
+We're going to create a new variable containing the current names of the supplementary dataframe columns. We'll use this later to clean column names up.
+
+``` {r Recording Supplementary Column Names As A Variable}
+  # Creating a column name variable
+  SuppCols <- names(df_supp[,3:ncol(df_supp)])
+``` 
+
+We're now going to merge the supplementary data with the main dataframe.
+
+``` {r Merging Supplementary Data with Dataframe}
+  # Merging the data by PID
+  df <- merge(df, 
+              df_supp, 
+              by = "PID")
+  rm(df_supp)
+```
+
+# ----- REFORMATTING DATA IN LONG FORMAT -----
+
+Great! Now we have all the data, but it's in wide format. We might typically just use a pivot_longer function here, but let's remember I was a little ding dong when I originally wrote this and couldn't figure out how to get it to work so we're gonna do it manually. We also need to do this in stages because the data is nested as observations within events within participants. In this stage, we will create a column for event, thus turning 50 participant-unique rows into 500 event unique-rows. The next stage will result in rows that are a combination of participant/event/emotion specific. 
+
+We're first gonna create a new variable full of the row names
+
+``` {r Defining Rows for New Dataframe}
+  # Creating an empty variable
+  dfrows <- NULL
+
+  # Iterating through each participant ...
+  for (i in PID){
+    # and through each event ...
+    for (f in 1:10){
+      # and adding another series of strings to the variable that will be the new names of the rows
+      dfrows <- c(dfrows, paste(i,".E",f,sep=""))
+    }
+  }
+```  
+
+And now we'll create the column names as well
+
+``` {r Defining Columns For New Dataframe}  
+  # Defining the new column names
+  dfcols <- c("PID", "Event", "Event.Desc", "Event.Key", "Alert", "Amuse", 
+              "Excite", "Aggress", "Annoy", "Upset", "Nerv", "Gross", 
+              "Whelm", "Panic", "Tense", "Shock", "Fear", "Other", 
+              "OtherDesc", "AlertFeel", "AlertReg", "AmuseFeel",
+              "AmuseReg", "ExciteFeel", "ExciteReg", "AggressFeel",
+              "AggressReg", "AnnoyFeel", "AnnoyReg", "UpsetFeel", "UpsetReg",
+              "NervFeel", "NervReg", "GrossFeel", "GrossReg", "WhelmFeel",
+              "WhelmReg", "PanicFeel", "PanicReg", "TenseFeel", "TenseReg",
+              "ShockFeel", "ShockReg", "OtherFeel", "OtherReg", "FearFeel", 
+              "FearReg", "RegStrat", EventCols, SectCols, SuppCols)
+```
+
+We'll create YET ANOTHER temporary dataframe which will help us migrate data using the column and row names we just created
+
+``` {r Creating A Long Form Dataframe}
+  # Creating a new dataframe which will be long format
+  df.temp <- data.frame(matrix(NA, 
+                               nrow = length(dfrows), 
+                               ncol = length(dfcols), 
+                               dimnames = list(dfrows, dfcols)), 
+                        stringsAsFactors = F)
+  rm(dfrows,dfcols)
+```
+
+Now we'll populate the new dataframe with the data that will largely be unaffected.
+
+``` {r Migrating Non-Emotion Data to Long Format}
+  # We will iterate through each of the rows of the new datafame ...
+  for (i in 1:nrow(df.temp)){
+    # and copying over the data to the new one
+    # Because there are ten times fewer rows in the original df, I first divide i by 10, which gives me a fraction
+    # I then round up so that the first ten rows of the new dataframe will all pull data from the first row of the old dataframe and so on. 
+    df.temp[i,c(1,49:232)] <- df[ceiling(i/10),c(1,322:337,479:646)]
+  }
+```
+
+Because events recur in a predictable pattern, we can just use the rep() command to populate the event column
+
+``` {r Filling in Event Data}
+  # Populate the event column
+  df.temp$Event <- rep(seq(1,10,1),length(rownames(df)))
+```
+
+Now we're gonna move the data over, but we're gonna do it in chunks
+
+``` {r Migrating Emotion Data to Long Format}
+  # Iterating through each row ...
+  for (i in 1:nrow(df)){
+    # and each event ...
+    for (p in 1:10){
+      # Moving Event Keys and Descriptions
+      df.temp[(((i-1) * 10) + p), 3:4] <- df[i, (((p-1) * 2) + 2:3)] 
+      # Moving the other emotion descriptions
+      df.temp$OtherDesc[(((i-1) * 10) + p)] <- df[i, ((p-1) * 30) + 22]
+      # Moving the feeling and regulation responses 
+      df.temp[(((i-1) * 10) + p), 20:48] <- df[i, ((p-1) * 30) + 23:51]
+      # Moving the endorsement variables
+      df.temp[(((i-1) * 10) + p), 5:16] <- df[i, ((p-1) * 13) + 338:349]
+      # Moving the other emotion endorsement variables
+      df.temp[(((i-1) * 10) + p), 18] <- df[i, ((p-1) * 13) + 350]
+      # Moving the fear endorsement variables
+      df.temp[(((i-1) * 10) + p), 17] <- df[i, (p-1) + 468]
+    }
+  }
+```
+
+Once again, renaming our dataframe
+
+``` {r Replacing our Temporary Dataframe Again Again}
+  # Renaming out dataframe
+  df <- df.temp
+  rm(df.temp,f,i,p)
+```  
+
+# ----- ADDING STRATEGY INFORMATION -----
+
+This next part requires some degree of manual data entry. Independent Raters assessed the strategies that individuals reported using. Each event was given a unique ID. I will match the unique ID for each rater with the corresponding row in this next part. I had to do this in excel because there were some repeats and I was worried the merge function might not be sophisticated enough to match corresponding events appropriately.
+
+``` {r Defining Event IDs}
+# Creating an Event ID variable
+EventID <- c(paste("D00",1:9,sep=""),
+             paste("D0",10:99,sep=""),
+             paste("D",100:275,sep=""))
+```
+
+``` {r Identifying Corresponding Row}
+# The corresponding row information manually entered and saved as an object
+CorRow <- c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,19,20,21,22,26,27,
+            28,30,32,33,35,36,37,38,39,40,41,42,43,44,45,46,47,48,
+            49,50,51,55,57,61,62,63,64,65,67,68,69,70,77,79,81,82,
+            83,84,86,88,91,92,93,94,96,97,99,101,102,103,104,106,
+            107,110,111,112,114,115,117,120,124,125,127,132,133,135,
+            136,137,138,139,141,142,145,151,152,153,155,156,157,160,
+            166,168,171,176,178,179,186,191,192,193,194,195,197,198,
+            199,200,201,202,203,204,205,206,207,208,209,210,211,212,
+            213,214,215,217,218,219,220,221,223,224,228,230,231,232,
+            233,234,235,236,237,238,239,240,241,242,243,244,245,246,
+            247,249,250,253,255,257,272,274,276,278,279,281,282,286,
+            287,288,291,296,297,299,301,302,303,308,311,312,314,315,
+            316,318,321,322,323,326,329,332,334,338,339,340,344,345,
+            346,347,348,349,350,351,352,353,357,359,361,362,364,365,
+            367,368,369,370,372,373,376,377,378,380,385,386,387,390,
+            392,394,399,402,409,410,411,412,413,414,415,416,417,418,
+            421,423,424,425,426,427,428,429,434,435,438,439,442,443,
+            445,446,447,448,450,452,453,458,463,467,468,491,492,493,
+            494,495,496,497,499,500)
+```
+
+Now we'll add those event IDs to the dataframe
+
+``` {r Creating An Event ID Column}
+  # Creating an Event ID column
+  df$EventID <- NA
+
+  # Adding the appropriate event ID to the appropriate row
+  for (i in 1:length(CorRow)){
+    df$EventID[CorRow[i]] <- EventID[i]
+  }
+  rm(EventID, CorRow)
+```
+
+Now we'll load in the regulation strategy data
+
+``` {r Loading Regulation Strategy data}
+  # Loading in the manually coded strategy data
+  df_strat <- read.csv(file = paste0(Import, "df_raw_strategies.csv"), 
+                             header = T, 
+                             sep=",", 
+                             stringsAsFactors = F)
+```
+
+Creating a new variable containing the names of the different potential strategies
+
+``` {r Recording Strategy Column Names As A Variable}
+  # Creating a new object containing the names of the strategies 
+  StratCols <- names(df_strat[,3:8])
+``` 
+
+We'll merge that new data with the main dataframe again by the Event IDs
+
+``` {r Merging Strategy Data with Dataframe}
+  # Merging data
+  df <- merge(df, 
+              df_strat, 
+              by.x = "EventID", 
+              by.y = "ID", 
+              all.x = T)
+  # Sorting that data  
+  df <- df[with(df, order(PID, Event)),]
+  rm(df_strat)
+```
+
+If merging was successful, RegStrat and Description should be duplicates of one another, so randomly sampling the same two from both of them should show duplicates.
+
+``` {r Testing Merging}
+  # Testing whether the merger worked
+  for (i in sample(1:length(rownames(df)),10)){
+    if (!is.na(df$EventID[i]))
+      print(c(df$RegStrat[i], df$Description[i]))
+  }  
+```
+
+We're now just gonna quickly remove another column that's not going to be helpful to us past this point
+
+``` {r Removing df$Description}
+  # Removing the description column
+  df <- subset(df, 
+               select = -c(Description))
+```
+
+# ----- SECOND STAGE REFORMAT TO LONG DATA FORM -----
+
+Great! Now, we'll pivot it once again. We currently have each participant and each event on each row. After this, we'll have a unique emotion, event, and participant on each row. 
+
+``` {r Defining Rows for Temporary Dataframe}
+  # Creating an empty rows name variable
+  dfrows <- NULL
+
+  # Creating an object containing the names of the different emotions
+  Emotions <- c("Alert", "Amuse", "Excite", "Aggress", "Annoy", "Upset",
+                "Nerv", "Gross", "Whelm", "Panic", "Tense", "Shock", "Fear","Other")
+  
+  # Iterating through each unique PID ...
+  for (i in PID){
+    # and each event ...
+    for (c in 1:10){
+      # and each unique emotion ...
+      for (k in Emotions){
+        # and creating a new object containing all the new row names
+        dfrows <- c(dfrows, paste(i,".E",c,".",k,sep=""))
+      }
+    }
+  }
+```  
+
+We'll again define the column names we have in this new dataframe
+
+``` {r Defining Columns for Temporary Dataframe}  
+  dfcols <- c("Event ID", "PID", "Event", "Event.Desc", "Event.Key", "Emotion","Valence",
+              "Presence","Emo.Extent","Reg.Extent", StratCols,"RegStrat", EventCols, SectCols, 
+              SuppCols)
+```
+
+AND for the LAST TIME, we'll create another new dataframe
+
+``` {r Creating Another Long Form Dataframe}
+  df.temp <- data.frame(matrix(NA, 
+                               nrow = length(dfrows), 
+                               ncol = length(dfcols), 
+                               dimnames = list(dfrows, dfcols)), 
+                        stringsAsFactors = F)
+  rm(dfrows,dfcols,EventCols,SectCols,SuppCols)  
+```
+
+Again, because event is predictable we'll just fill it with the rep() function
+
+``` {r Populating The Event Variable}
+  df.temp$Event <- rep(sort(rep(1:length(Events),length(Emotions))),length(PID))
+```
+
+And we can do the same for emotion
+
+``` {r Populating The Emotion Variable}
+  df.temp$Emotion <- rep(rep(Emotions,length(Events)),length(PID))
+```
+
+And for the valence of those emotions
+
+``` {r Populating The Valence Variable}
+  df.temp$Valence <- rep(rep(c(rep("Positive",3),rep("Negative",10),"Unknown"), length(PID)), length(Events))
+```
+
+Now we'll migrate that data according to emotion, event, and PID
+
+``` {r Migrating Emotion Presence and Regulation Strategy Data}
+  for (i in 1:length(rownames(df))){
+      for(s in 1:14){
+        df.temp$Presence[(((i-1) * 14) + s)] <- df[i, (s + 5)]
+        df.temp$RegStrat[((i-1) * 14) + 1:14] <- rep(df$RegStrat[i],14)
+      }
+  }
+```
+
+``` {r Migrating Event, Emotion and Regulation Extent Data}
+  for (i in 1:length(rownames(df))){
+    #Supplemental Data
+    df.temp[((i-1) * 14) + 1:14,c(1,2,17:201)] <- df[i,c(1,2,49:233)]
+    #Regulation Strategies
+    df.temp[((i-1) * 14) + 1:14,c(11:16)] <- df[i,c(234:239)]
+    #Event Descriptions
+    df.temp$Event.Desc[((i-1) * 14) + 1:14] <- rep(df$Event.Desc[i],14)
+    #Event Keys
+    df.temp$Event.Key[((i-1) * 14) + 1:14] <- rep(df$Event.Key[i],14)
+    #Other Extent
+    df.temp$Emo.Extent[i * 14] <- df[i, 45]
+    #Other Regulation
+    df.temp$Reg.Extent[i * 14] <- df[i, 46]
+    #Fear Extent
+    df.temp$Emo.Extent[(i * 14) - 1] <- df[i, 47]
+    #Fear Regulation
+    df.temp$Reg.Extent[(i * 14) - 1] <- df[i, 48]
+    for(s in 1:24){
+      #Emotion Extent
+      if (s%%2 == 1)
+        df.temp$Emo.Extent[(((i-1) * 14) + ceiling(s/2))] <- df[i, (s + 20)]
+      #Emotion Regulation
+      if (s%%2 != 1)
+        df.temp$Reg.Extent[(((i-1) * 14) + ceiling(s/2))] <- df[i, (s + 20)]
+    }
+  }
+```
+
+For the last time, we're going to rename our dataframe
+
+``` {r  Replacing our Temporary Dataframe Again Again Again}
+  df <- df.temp
+  rm(c,i,s,k,Emotions,Events,df.temp,PID,StratCols)
+```  
+
+And we are finally done! 
+
+``` {r Exporting my hard work}
+  write.csv(df,file = paste0(Export, "df.csv"), na = "N/A")
+```  

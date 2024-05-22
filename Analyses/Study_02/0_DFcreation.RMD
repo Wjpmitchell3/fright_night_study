@@ -240,7 +240,7 @@ df.temp <-pivot_longer(data=df.temp,
 Now we'll read in the original dataframe (i.e., what experiencers in the haunted house actually did when faced with these situations) ...
 
 ```{r Loading dataframe}
-  df.og <- read.csv(file = paste0(WorkDir,"/data/Pilot/Deriv/df_subset.csv"), 
+  df.og <- read.csv(file = paste0(WorkDir,"/data/Prelim_Study/Deriv/df_subset.csv"), 
                  header = T, sep=",",
                  row.names = 1,
                  stringsAsFactors = F,
@@ -250,7 +250,7 @@ Now we'll read in the original dataframe (i.e., what experiencers in the haunted
 ...and an event-level dataframe (i.e., collapsing across all emotions, wherein each event only takes up a single row)
 
 ```{r Loading dataframe}
-  df.og.el <- read.csv(file = paste0(WorkDir, "/data/Pilot/Deriv/df_subset_eventlevel.csv"), 
+  df.og.el <- read.csv(file = paste0(WorkDir, "/data/Prelim_Study/Deriv/df_subset_eventlevel.csv"), 
                  header = T, sep=",",
                  row.names = 1,
                  stringsAsFactors = F,
@@ -305,7 +305,7 @@ It may be the case that individuals are more accurate and predicting strategy wh
 
 #  CREATING A PERSON LEVEL DATAFRAME
 
-Okay, lastly, it may be good to have a person-level dataframe of the new all-combined together data. I'm going to take a similar approach to how I'd constructed this in the pilot. 
+Okay, lastly, it may be good to have a person-level dataframe of the new all-combined together data. I'm going to take a similar approach to how I'd constructed this in the preliminary study. 
 
 I'll start by saving the unique PIDs as an array
 

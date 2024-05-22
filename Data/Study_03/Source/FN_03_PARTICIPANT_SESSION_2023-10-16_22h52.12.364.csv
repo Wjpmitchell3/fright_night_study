@@ -1,3 +1,0 @@
-"trial_id","trial_type","trial_index","time_elapsed","internal_node_id","subject_id","study_id","session_id","success","timeout","failed_images","failed_audio","failed_video","task","condition"
-"pavlovia_init","pavlovia","0","1371","0.0-0.0","6436271f6ff817660ede859b","652d46c8909a0ef52332ec58","652dff8ac3df5a846d804698","","","","","","",""
-"","preload","1","1854","0.0-1.0","6436271f6ff817660ede859b","652d46c8909a0ef52332ec58","652dff8ac3df5a846d804698","true","false","[]","[]","[]","Preload","Forecast"
