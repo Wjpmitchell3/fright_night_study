@@ -1,5 +1,0 @@
-"trial_id","trial_type","trial_index","time_elapsed","internal_node_id","subject_id","study_id","session_id","success","timeout","failed_images","failed_audio","failed_video","task","condition","rt","time","width","height","webaudio","browser","browser_version","mobile","os","fullscreen","vsync_rate","webcam","microphone"
-"pavlovia_init","pavlovia","0","685","0.0-0.0","5d42486206811e001ada5b4b","652d46c8909a0ef52332ec58","6535df64b4ff80adff474658","","","","","","","","","","","","","","","","","","","",""
-"","preload","1","800","0.0-1.0","5d42486206811e001ada5b4b","652d46c8909a0ef52332ec58","6535df64b4ff80adff474658","true","false","[]","[]","[]","Preload","Forecast","","","","","","","","","","","","",""
-"","fullscreen","2","3183","0.0-2.0","5d42486206811e001ada5b4b","652d46c8909a0ef52332ec58","6535df64b4ff80adff474658","true","","","","","Fullscreen","","1369","23:14:45","","","","","","","","","","",""
-"","browser-check","3","4184","0.0-3.0","5d42486206811e001ada5b4b","652d46c8909a0ef52332ec58","6535df64b4ff80adff474658","","","","","","Browser_Check","","","","1366","768","true","chrome","118.0.0","false","Windows 10","true","60.14","true","true"

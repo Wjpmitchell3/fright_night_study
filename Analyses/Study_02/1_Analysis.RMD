@@ -60,7 +60,7 @@ The `here()` function should ideally Tidentify our upper-level project directory
 Loading in our data
   
 ```{r Loading experiencer dataframe}
-  df.og <- read.csv(file = paste0(WorkDir, "/Data/Pilot/Deriv/df_subset.csv"), 
+  df.og <- read.csv(file = paste0(WorkDir, "/Data/Prelim_Study/Deriv/df_subset.csv"), 
                     header = T, 
                     sep=",", 
                     stringsAsFactors = T,
@@ -155,7 +155,7 @@ Lastly, we'll compare uncertainty intolerance, since it's demonstrated a consist
 test <- t.test(x=df.og.pl$IUS.OG, y = df.fu.pl$IUS.FU,alternative = "two.sided",paired = F,var.equal = F)
 ```
 
-The two samples do not differ significantly by ERQ Reappraisal scores (xexp = 29.9 xfor= 31.0, 95% CI = [-3.22, 1.03] t(45) = -1, p = 0.3) or IUS scores (xexp = 33.6 xfor= 34.3, 95% CI= [-7.07, 5.59], t(35) = -0.2, p = 0.8) . However, significant differences were observed between the two groups for the expressive suppression ERQ subscale (xexp = 12.5, xfor = 15.7, t(48) = -3, p < 0.001). Neither scale was associated with strategy usage in the Pilot.  
+The two samples do not differ significantly by ERQ Reappraisal scores (xexp = 29.9 xfor= 31.0, 95% CI = [-3.22, 1.03] t(45) = -1, p = 0.3) or IUS scores (xexp = 33.6 xfor= 34.3, 95% CI= [-7.07, 5.59], t(35) = -0.2, p = 0.8) . However, significant differences were observed between the two groups for the expressive suppression ERQ subscale (xexp = 12.5, xfor = 15.7, t(48) = -3, p < 0.001). Neither scale was associated with strategy usage in the preliminary study.  
 
 # AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION  
 
@@ -175,7 +175,7 @@ df.fu <- subset(df.fu, !is.na(df.fu$Strategy.FU) &
                         !is.na(df.fu$IUS_F2.FU))
 ```
 
-This appraoch will again mirror previous hierarchical binary logistic regressions (See Pilot and Study 1), so I will specifically comment upon places where we deviate. In this case, we're deviating slightly in our random effects because we could reasonably expect there to be an effect of the forecaster and the experiencer (an individual might have regulation tendencies or influences that bias them to using one strategy independnent of the effects of emotion intensity in either case). 
+This appraoch will again mirror previous hierarchical binary logistic regressions (See Prelim Study and Study 1), so I will specifically comment upon places where we deviate. In this case, we're deviating slightly in our random effects because we could reasonably expect there to be an effect of the forecaster and the experiencer (an individual might have regulation tendencies or influences that bias them to using one strategy independnent of the effects of emotion intensity in either case). 
 
 ```{r Mixed Effect Logistic Regression Model - NULL}
 m0 <- glmer(Strategy.FU ~ 1 + (1 | PID.FU) + (1 | PID.OG), data = df.fu, family = binomial)
@@ -279,7 +279,7 @@ plot
 
 # AFFECTIVE RESPONSES DID PREDICT STRATEGY PREDICTION AT EVENT LEVEL (MEAN)
 
-Once again,the way that we had originally collected data in the pilot means that there are at least a few levels of granularity through which we can view this data. We just calculated it at the level of observation (i.e., showing a participant an event, the emotions and their respective intensities, having them choose one strategy to regulate the event, and then calculating the association between that choice and the intensity of those emotions individually). However, it might be more reasonable to calculate the association at the event-level (i.e., calculating the association between the regulation choice and the average intensity of emotions contained within an event). I'm agnostic as to which approach is best, so just like we had in the pilot, I'm going to see whether the association maintains when we look at the data this way. 
+Once again,the way that we had originally collected data in the preliminary study means that there are at least a few levels of granularity through which we can view this data. We just calculated it at the level of observation (i.e., showing a participant an event, the emotions and their respective intensities, having them choose one strategy to regulate the event, and then calculating the association between that choice and the intensity of those emotions individually). However, it might be more reasonable to calculate the association at the event-level (i.e., calculating the association between the regulation choice and the average intensity of emotions contained within an event). I'm agnostic as to which approach is best, so just like we had in the preliminary study, I'm going to see whether the association maintains when we look at the data this way. 
 
 I'm generating a dataframe here that removes the observation-specific variables and then removes duplicate rows, leaving us with only one row per event-forecaster combo with the average values for that event. 
 

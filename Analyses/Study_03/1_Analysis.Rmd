@@ -45,102 +45,13 @@ The `here()` function should ideally Tidentify our upper-level project directory
   WorkDir <- here::here()
 
   # Identifying specific directories to read and write from
-  Import <- paste0(WorkDir, "/Data/Study_03/Source/")
+  Import <- paste0(WorkDir, "/Data/Study_03/Raw/")
   Plots <- paste0(WorkDir, "/Products/Manuscripts/plots_tables/")
-  
-  # Loading Custom Functions
-  source(paste0(WorkDir, "/Analyses/Study_03/func_pavlovia_cleaner.R"))
 ```
 
 # ----- LOADING IN DATA -----
-
-We're starting off my saving all file names above 20000 bytes (which is the rough cutoff for having completed enough of the study to be valid) to an array ...
-```{r Specifying Data Source}
-files <- list.files(Import,
-                    full.names = T) %>%
-         .[file.size(.) > 20000]
-```
-
-...and now we'll load all of that data into a singular dataframe using our custom data cleaner function.  
-```{r Loading Data, warning = F}
-## Iterating Through Each File in the Source}
-for (FILE in 1:length(files)){
-  
-  ## If this is the first file we're reading ...
-  if (FILE == 1){
-    
-    ## ... Define it as df
-    df <- pavlovia_cleaner(files[FILE])
-    
-  }
-  
-  ## If this is a later file we're reading ...
-  if (FILE > 1){
-    
-    ## ... Process it ...
-    df_ <- pavlovia_cleaner(files[FILE])
-    
-    ## ... and then append it to df. 
-    df <- bind_rows(df,
-                    df_)
-  }
-  
-  ## If this is the last iteration ...
-  if (FILE == length(files)){
-    
-    ## Clean Our Space
-    rm(pavlovia_cleaner, FILE, files, df_)
-  }
-}
-```
-
-# ----- TIME -----
-
-I'm starting off by calculating how long each participant took to complete their session
-```{r Assessing Time}
-# Creating an Empty Column For Time
-df$Time_Taken <- NA
-
-# Iterating through each row and calculating time taken
-for (ROW in 1:nrow(df)){
-  
-  # If Time in ROW is NA, skip
-  if (!is.na(df$Start_Time[ROW])){
-    
-    # Convert time to a difftime object
-    df$Time_Taken[ROW] <- strptime(df$End_Time[ROW], format = "%H:%M:%S") - strptime(df$Start_Time[ROW], format = "%H:%M:%S") %>%
-                          as.numeric(units = "secs")
-    
-    # If the value is negative (indicating that their participation took place across days (i.e., midnight))
-    if (df$Time_Taken[ROW] < 0 & !is.na(df$Time_Taken[ROW])){
-      
-      # Add the number of seconds in a day to get the true time it took. 
-      df$Time_Taken[ROW] <- df$Time_Taken[ROW] + 86400
-    }
-  }
-}
-
-```
-
-# ----- FILTERING DATA -----
-
-Now we're filtering out non-completers, folks familiar with videos, and folks who did not complete the attention check correctly.
-```{r Filtering Data}
-## If people failed the attention check, get rid of them
-df <- df[df$Attention_Check == 4,]
-
-## If people are familiar with the stimuli, get rid of that stimulus
-for (PID in unique(df$PID)){
-  if (any(!is.na(df$Familiar_specific[df$PID == PID]))){
-    array <- df$Familiar_specific[df$PID == PID & !is.na(df$PID)][1] %>%
-             strsplit(" ") %>%
-             as.data.frame() %>%
-             .[,1]
-    for (VID in 1:length(array)){
-      df <- df[-which(df$PID == PID & !is.na(df$PID) & df$Stimulus == array[VID]),] 
-    }
-  }
-}
+```{r Reading in the data}
+df <- read.csv(paste0(Import, "df.csv"), row.names = 1)
 ```
 
 # ----- ADDING VARIABLE -----
@@ -234,15 +145,15 @@ ggplot(results, aes(x = Group, y = rating, fill = Group)) +
 
 The conditions should demonstrate no differences in affective intensity
 ```{r}
-(t_test_result <- t.test(x = df$IntBefore[df$Condition == "Experience"],
-                        y = df$IntBefore[df$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df$IntBefore[df$Condition == "Strategy Use"],
+                        y = df$IntBefore[df$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 26.2) did not report significantly greater intensity than forecasters (x = 28.8) before the videos started (t = -1.50, df = 908, p = 0.134)
 
 ```{r}
-(t_test_result <- t.test(x = df$IntAfter[df$Condition == "Experience"],
-                        y = df$IntAfter[df$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df$IntAfter[df$Condition == "Strategy Use"],
+                        y = df$IntAfter[df$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 46.5) did not report significantly greater intensity than forecasters (x = 48.0) after the videos ended (t = -0.738, df = 918, p = 0.460)
@@ -279,50 +190,50 @@ ggplot(results, aes(x = Group, y = rating, fill = Group)) +
 We ideally don't want these two groups differing any anyway across all of these metrics.
 
 ```{r Forecasters v. Experiencers on ERQ Reappraisal}
-(t_test_result <- t.test(x = df_pl$ERQ_Reapp[df_pl$Condition == "Experience"],
-                        y = df_pl$ERQ_Reapp[df_pl$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df_pl$ERQ_Reapp[df_pl$Condition == "Strategy Use"],
+                        y = df_pl$ERQ_Reapp[df_pl$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 24.5) did not report significantly greater reappraisal tendencies than forecasters (x = 24.4) (t = 0.10, df = 199, p = 0.9)
 
 ```{r Forecasters v. Experiencers on ERQ Suppression}
-(t_test_result <- t.test(x = df_pl$ERQ_Supp[df_pl$Condition == "Experience"],
-                        y = df_pl$ERQ_Supp[df_pl$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df_pl$ERQ_Supp[df_pl$Condition == "Strategy Use"],
+                        y = df_pl$ERQ_Supp[df_pl$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 10.8) did not report significantly greater suppression tendencies than forecasters (x = 12.1) (t = -1.94, df = 223, p = 0.0542)
 
 ```{r Forecasters v. Experiencers on IUS_Factor 1}
-(t_test_result <- t.test(x = df_pl$IUS_F1[df_pl$Condition == "Experience"],
-                        y = df_pl$IUS_F1[df_pl$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df_pl$IUS_F1[df_pl$Condition == "Strategy Use"],
+                        y = df_pl$IUS_F1[df_pl$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 14.4) did not report significantly greater IUS_F1 than forecasters (x = 15.1) (t = -0.9, df = 235, p = 0.3)
 
 ```{r Forecasters v. Experiencers on IUS Factor 2}
-(t_test_result <- t.test(x = df_pl$IUS_F2[df_pl$Condition == "Experience"],
-                        y = df_pl$IUS_F2[df_pl$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df_pl$IUS_F2[df_pl$Condition == "Strategy Use"],
+                        y = df_pl$IUS_F2[df_pl$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 7.26) did not report significantly greater IUS_F2 than forecasters (x = 7.92) (t = -1, df = 220, p = 0.3)
 
 ```{r Forecasters v. Experiencers on Age}
-(t_test_result <- t.test(x = as.numeric(df_pl$Age[df_pl$Condition == "Experience"]),
-                         y = as.numeric(df_pl$Age[df_pl$Condition == "Forecast"])))
+(t_test_result <- t.test(x = as.numeric(df_pl$Age[df_pl$Condition == "Strategy Use"]),
+                         y = as.numeric(df_pl$Age[df_pl$Condition == "Strategy Forecast"])))
 ```
 
 RESULTS: Experiencers (x = 38.6) did not report significantly greater age than forecasters (x = 38.8) (t = -0.1, df = 220, p = 0.9)
 
 ```{r Forecasters v. Experiencers on DERS}
-(t_test_result <- t.test(x = df_pl$DERS_Strategies[df_pl$Condition == "Experience"],
-                         y = df_pl$DERS_Strategies[df_pl$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df_pl$DERS_Strategies[df_pl$Condition == "Strategy Use"],
+                         y = df_pl$DERS_Strategies[df_pl$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 12.1) did not report significantly greater DERS strategy subscale than forecasters (x = 12.0) (t = 0.08, df = 221, p = 0.9)
 
 ```{r Forecasters v. Experiencers on Horror Enjoyment}
-(t_test_result <- t.test(x = df_pl$Horror_Enjoy[df_pl$Condition == "Experience"],
-                         y = df_pl$Horror_Enjoy[df_pl$Condition == "Forecast"]))
+(t_test_result <- t.test(x = df_pl$Horror_Enjoy[df_pl$Condition == "Strategy Use"],
+                         y = df_pl$Horror_Enjoy[df_pl$Condition == "Strategy Forecast"]))
 ```
 
 RESULTS: Experiencers (x = 2.99) did not report significantly greater horror enjoyment than forecasters (x = 2.95) (t = 0.1, df = 226, p = 0.9)
@@ -434,13 +345,13 @@ RESULTS: We do find differences in how often the conditions regulate (x2(1) = 12
 ```
 
 ```{r Generating a frequency table specifically for experiencers}
-df$Regulated[df$Condition == "Experience"] %>%
-  table()/length(which(df$Condition == "Experience"))
+df$Regulated[df$Condition == "Strategy Use"] %>%
+  table()/length(which(df$Condition == "Strategy Use"))
 ```
 
 ```{r Generating a frequency table specifically for forecasters}
-df$Regulated[df$Condition == "Forecast"] %>%
-  table()/length(which(df$Condition == "Forecast"))
+df$Regulated[df$Condition == "Strategy Forecast"] %>%
+  table()/length(which(df$Condition == "Strategy Forecast"))
 ```
 
 These results suggest experiencers regulate less often than forecasters predict that they should
@@ -491,13 +402,13 @@ plot
 ```
 
 ```{r Generating a frequency table specifically for experiencers}
-df$Distracted[df$Condition == "Experience" & !is.na(df$Distracted)] %>%
-  table()/length(which(df$Condition == "Experience" & !is.na(df$Distracted)))
+df$Distracted[df$Condition == "Strategy Use" & !is.na(df$Distracted)] %>%
+  table()/length(which(df$Condition == "Strategy Use" & !is.na(df$Distracted)))
 ```
 
 ```{r Generating a frequency table specifically for forecasters}
-df$Distracted[df$Condition == "Forecast" & !is.na(df$Distracted)] %>%
-  table()/length(which(df$Condition == "Forecast" & !is.na(df$Distracted)))
+df$Distracted[df$Condition == "Strategy Forecast" & !is.na(df$Distracted)] %>%
+  table()/length(which(df$Condition == "Strategy Forecast" & !is.na(df$Distracted)))
 ```
 
 ## ---- Primary Analysis (Intensity Predicting Strategy) ----
@@ -613,6 +524,7 @@ set_theme(
 ```{r Generating Primary Model Visualization}
 plot <- plot_model(m5, 
                    type = "int", 
+                   terms="IntAfter [all]",
                    title = "", 
                    line.size = 2,
                    axis.title = c("Affective Intensity", 
@@ -625,7 +537,7 @@ plot <- plot_model(m5,
   tiff(paste0(Plots, "Fig8.tiff"),       
        res = 300,
        units = "in",
-       width = 6, 
+       width = 7, 
        height = 4.5)
   plot
   dev.off()
@@ -693,10 +605,10 @@ summary(aov(Effort ~ Distracted + Condition + Error(PID), data = df))
 
 We find a trending relationship by condition. Let's explore a little further
 ```{r Effort Contrasts}
-(effort_Dist <- t.test(x = df$Effort[df$Condition == "Experience" & df$Distracted == 1],
-       y = df$Effort[df$Condition == "Forecast" & df$Distracted == 1]))
-(effort_Reapp <- t.test(x = df$Effort[df$Condition == "Experience" & df$Distracted == 0],
-       y = df$Effort[df$Condition == "Forecast" & df$Distracted == 0]))
+(effort_Dist <- t.test(x = df$Effort[df$Condition == "Strategy Use" & df$Distracted == 1],
+       y = df$Effort[df$Condition == "Strategy Forecast" & df$Distracted == 1]))
+(effort_Reapp <- t.test(x = df$Effort[df$Condition == "Strategy Use" & df$Distracted == 0],
+       y = df$Effort[df$Condition == "Strategy Forecast" & df$Distracted == 0]))
 
 p.adjust(c(effort_Dist$p.value, effort_Reapp$p.value), method = "bonferroni")
 ```
@@ -718,11 +630,11 @@ We find a lot of statistically significant relationships. Let's run the contrast
 t.test(x = df$IntReduce[df$Distracted == 0],
        y = df$IntReduce[df$Distracted == 1])
 
-t.test(x = df$IntReduce[df$Condition == "Experience"],
-       y = df$IntReduce[df$Condition == "Forecast"])
+t.test(x = df$IntReduce[df$Condition == "Strategy Use"],
+       y = df$IntReduce[df$Condition == "Strategy Forecast"])
   
-t.test(x = df$IntReduce[df$Condition == "Experience" & df$Distracted == 1],
-       y = df$IntReduce[df$Condition == "Forecast" & df$Distracted == 1])
+t.test(x = df$IntReduce[df$Condition == "Strategy Use" & df$Distracted == 1],
+       y = df$IntReduce[df$Condition == "Strategy Forecast" & df$Distracted == 1])
 ```
 
 ```{r Again Setting the Theme}
