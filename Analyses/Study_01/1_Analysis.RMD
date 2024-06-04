@@ -108,6 +108,38 @@ df_all$CogLoad_Post <- as.numeric(df_all$CogLoad_Post)
 df_all$Intense.pmean.z <- as.numeric(df_all$Intense.pmean.z)
 ```
 
+# DETOUR: Analyzing Strategy Use at the Section Level
+Reviewer 4 expressed concern with utilizing idiosyncratic intensity to predict self-regulation, arguing that  we don't know if we captured intensity as a precursor or product of self-regulation. If we had normalized ratings for the different events in the haunted house, much as previous studies have relied on standardized image sets, then we wouldn't have this problme. We don't have normalized ratings, but we do have sections which are theoretically categorically different in terms of emotional intensity. The Haunted House was supposed to be organized into a more- and less-scary set of sections. If we aggregate across events and still find differences in strategy usage, it might suggest that our findings are still valid. I'll of course try to validate that these sections differ in terms of intensity first.
+
+We asked subjects to rate from 1 to 5 how fearful they felt during each section immediately after the section ended. I'm using this to validate the categorization of each section. 
+
+```{r Finding whether there differences in average fear ratings by section type}
+# Creating the dataframe
+df_detour <- df_all %>% 
+             distinct(PID, Crypt, Delirium, Take.13, Machine.Shop) %>%
+             pivot_longer(cols = c(Crypt, Delirium, Take.13, Machine.Shop), 
+                         names_to = "Section", 
+                         values_to = "Rating") %>%
+             mutate(Category = ifelse(Section %in% c("Delirium", "Take.13"), "Low", "High"))
+
+# Constructing our t test
+t.test(x = df_detour$Rating[df_detour$Category == "High"],
+       y = df_detour$Rating[df_detour$Category == "Low"],
+       paired = T)
+
+# Calculating the mean
+mean(df_detour$Rating[df_detour$Category == "High"], na.rm = T)
+mean(df_detour$Rating[df_detour$Category == "Low"], na.rm = T)
+
+# Cleaning our space
+rm(df_detour)
+```
+
+Okay, it does appear that, at least at the section level, the difference in-the-moment fear ratings is pretty substantial. 
+
+```{r}
+```
+
 # Subsetting Relevant Data
 
 we're starting by focusing on those cases in which the intended regulation goal was to downregulate and excluding any cases in which we asked participants to recall emotional experiences that they previously recalled. We plan to reanalyze this data later to assess accuracy in regulatory recall. 
