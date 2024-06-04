@@ -113,6 +113,18 @@ Reviewer 4 expressed concern with utilizing idiosyncratic intensity to predict s
 
 We asked subjects to rate from 1 to 5 how fearful they felt during each section immediately after the section ended. I'm using this to validate the categorization of each section. 
 
+```{r Generating a New Dataframe of Unique Events}
+
+# There was apparently an issue in which the box to describe event 3 was not appearing for some subjects so descriptions of it are missing. It affected four events, so we'll exclude those.
+
+df_events <- df_all %>%
+             subset(!is.na(.$EventDesc) & !is.na(df_all$Disengage)) %>%
+             distinct(PID, EventNum, EventKey, EventDesc)
+
+write.csv(df_events, paste0(WorkDir, "/data/Study_01/Raw/Unique_Events.csv"))
+             
+```
+
 ```{r Finding whether there differences in average fear ratings by section type}
 # Creating the dataframe
 df_detour <- df_all %>% 
