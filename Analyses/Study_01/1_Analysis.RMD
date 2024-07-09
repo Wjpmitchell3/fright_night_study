@@ -114,38 +114,39 @@ Reviewer 4 expressed concern with utilizing idiosyncratic intensity to predict s
 We asked subjects to rate from 1 to 5 how fearful they felt during each section immediately after the section ended. I'm using this to validate the categorization of each section. 
 
 ```{r Generating a New Dataframe of Unique Events}
-
 # There was apparently an issue in which the box to describe event 3 was not appearing for some subjects so descriptions of it are missing. It affected four events, so we'll exclude those.
-
 df_events <- df_all %>%
              subset(!is.na(.$EventDesc) & !is.na(df_all$Disengage)) %>%
              distinct(PID, EventNum, EventKey, EventDesc)
 
 write.csv(df_events, paste0(WorkDir, "/data/Study_01/Raw/Unique_Events.csv"))
-             
 ```
 
-```{r}
-df_events <- read.csv(paste0(Import, "Unique_Events_Pilot_Possible.csv"), na.strings = "") %>%
-             rbind(., read.csv(paste0(Import, "Unique_Events_Primary_Possible.csv"), na.strings = ""))
+```{r Calculating Whether Regulation Differed By Section}
+# Reading in the data
+df_events <- read.csv(paste0(Import, "Unique_Events_Pilot_Final.csv"), na.strings = c("","-")) %>%
+             rbind(., read.csv(paste0(Import, "Unique_Events_Primary_Final.csv"), na.strings = c("", "-")))
 
+# Creating a dataframe of regulation activity and section where events occurred
 df_temp <- merge(df_all,
                  y = df_events) %>%
-           subset(.$Timing != "ImmReg" & !is.na(.$Distracted) & !is.na(.$Judgement),
-                  select = c("PID", "EventNum", "Judgement", "Distracted")) %>%
+           subset(.$Timing != "ImmReg" & !is.na(.$Distracted) & !is.na(.$Agreement),
+                  select = c("PID", "EventNum", "Agreement", "Distracted")) %>%
            distinct() %>%
-           mutate(Category = ifelse(Judgement %in% c("Delirium", "Take.13"), "Low", "High"))
+           mutate(Category = ifelse(Agreement %in% c("Delirium", "Take.13"), "Low", "High"))
 
+# Generating a table to see how many events occurred in low and high intensity sections
 table(df_temp$Category)
 
+# Analyzing the relationship between intensity and strategy with a chi-square test
 chisq.test(x = df_temp$Category,
            y = df_temp$Distracted)
 
+# Examining the proportion of events regulated with each strategy by intensity. 
 prop.table(table(df_temp$Distracted[df_temp$Category == "Low"]))
 prop.table(table(df_temp$Distracted[df_temp$Category == "High"]))
 
 ```
-
 
 ```{r Finding whether there differences in average fear ratings by section type}
 # Creating the dataframe
@@ -170,9 +171,6 @@ rm(df_detour)
 ```
 
 Okay, it does appear that, at least at the section level, the difference in-the-moment fear ratings is pretty substantial. 
-
-```{r}
-```
 
 # Subsetting Relevant Data
 

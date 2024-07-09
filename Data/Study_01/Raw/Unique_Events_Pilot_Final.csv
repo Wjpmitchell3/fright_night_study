@@ -1,5 +1,5 @@
-﻿PID,EventNum,EventKey,EventDesc,Judgement
-A-023,1,Alarming,"I guess when I first walked into delirium and an actor made a loud noise with a cane or something, that was the moment when I kind of said to myself, ""Okay, here we go, I'm in a haunted house now."". So that was the moment I started internalizing and mentally preparing myself for what I was about to experience.",Delirium
+PID,EventNum,EventKey,EventDesc,Agreement
+A-023,1,Alarming,"I guess when I first walked into delirium and an actor made a loud noise with a cane or something, that was the moment when I kind of said to myself, ""Okay, here we go, I'm in a haunted house now."". So that was the moment I started internalizing and mentally preparing myself for what I was about to experience.",Crypt
 A-084,1,Bus,The bus because you didnt know if the people in the seats were real or not,Crypt
 A-122,2,Chainsaw,The man said someone is getting cut tonight then started a chainsaw,Machine_Shop
 A-008,2,choppy,guy chopping the table ,Machine_Shop
@@ -12,13 +12,13 @@ A-060,3,fun,floorboards moving caught me off guard,Crypt
 A-094,3,Fun,Colorful set in delirium made me feel excited,Delirium
 A-087,3,gross,"Another was the machine itself. Towards the end of theMachine, you actually went inside the machine. There were heads all over this thing. There were also arms, legs, feet and organs. There rest of the machine was covered in flesh and blood. The machine woul shake back and frth. ",Machine_Shop
 A-094,3,gross,gruesome body parts hanging from ceiling ,Machine_Shop
-A-122,6,Hallway,Strobe light hallway with the actors who tried to scare you in it,Crypt
-A-018,3,Handicapped,The very dark rom with hanging body parts that you could only see for a couple of seconds when the lights flashed.,Crypt
+A-122,6,Hallway,Strobe light hallway with the actors who tried to scare you in it,Machine_Shop
+A-018,3,Handicapped,The very dark rom with hanging body parts that you could only see for a couple of seconds when the lights flashed.,Machine_Shop
 A-005,2,Loud,The chainsaw man on the ramp. His chainsaw made very loud noise and he chased us down the very narrow and thin ramp.,Machine_Shop
 A-042,2,nervous,Getting followed by the big man with a chainsaw,Machine_Shop
 A-102,3,Robe,Dara and I admired the lady's robe in Take 13 and said we would consider getting one for ourselves.  Then she followed us into the next room and snapped her fan.,Take_13
 A-072,6,scary,in the last section there was someone opening and closing a sliding hatch and scaring others. ,Crypt
 A-004,5,stumble,The moving tunnel made me feel confused and actually felt like the platform was moving.,Delirium
-A-024,2,tense,The second thing that happened to me was a big blast of air on my legs that I thought was someone or something grabbing me. I was already fearful for the event as the bus had already creeped me out and I was definitely on edge. ,Crypt
+A-024,2,tense,The second thing that happened to me was a big blast of air on my legs that I thought was someone or something grabbing me. I was already fearful for the event as the bus had already creeped me out and I was definitely on edge. ,Machine_Shop
 A-115,1,weapon,When the man with the mallet was walking towards us ,Machine_Shop
 A-098,2,worried,there was a man typing on a type writer when you firs enter.,Take_13
