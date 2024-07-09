@@ -125,6 +125,28 @@ write.csv(df_events, paste0(WorkDir, "/data/Study_01/Raw/Unique_Events.csv"))
              
 ```
 
+```{r}
+df_events <- read.csv(paste0(Import, "Unique_Events_Pilot_Possible.csv"), na.strings = "") %>%
+             rbind(., read.csv(paste0(Import, "Unique_Events_Primary_Possible.csv"), na.strings = ""))
+
+df_temp <- merge(df_all,
+                 y = df_events) %>%
+           subset(.$Timing != "ImmReg" & !is.na(.$Distracted) & !is.na(.$Judgement),
+                  select = c("PID", "EventNum", "Judgement", "Distracted")) %>%
+           distinct() %>%
+           mutate(Category = ifelse(Judgement %in% c("Delirium", "Take.13"), "Low", "High"))
+
+table(df_temp$Category)
+
+chisq.test(x = df_temp$Category,
+           y = df_temp$Distracted)
+
+prop.table(table(df_temp$Distracted[df_temp$Category == "Low"]))
+prop.table(table(df_temp$Distracted[df_temp$Category == "High"]))
+
+```
+
+
 ```{r Finding whether there differences in average fear ratings by section type}
 # Creating the dataframe
 df_detour <- df_all %>% 
