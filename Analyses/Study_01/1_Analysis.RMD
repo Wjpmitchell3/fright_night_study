@@ -170,6 +170,28 @@ mean(df_detour$Rating[df_detour$Category == "Low"], na.rm = T)
 rm(df_detour)
 ```
 
+```{r Checking Whether Emotions More Broadly Are Also More Intense By Section}
+# Reading in the data
+df_events <- read.csv(paste0(Import, "Unique_Events_Pilot_Final.csv"), na.strings = c("","-")) %>%
+             rbind(., read.csv(paste0(Import, "Unique_Events_Primary_Final.csv"), na.strings = c("", "-")))
+
+# Creating a dataframe of regulation activity and section where events occurred
+df_temp <- merge(df_all,
+                 y = df_events) %>%
+           subset(!is.na(.$Distracted) & !is.na(.$Agreement),
+                  select = c("PID", "EventNum", "Agreement", "Intense", "Valence")) %>%
+           distinct() %>%
+           mutate(Category = ifelse(Agreement %in% c("Delirium", "Take.13"), "Low", "High"))
+
+# Constructing our t test
+t.test(x = df_temp$Intense[df_temp$Category == "High"],
+       y = df_temp$Intense[df_temp$Category == "Low"])
+
+# Calculating the mean
+mean(df_temp$Intense[df_temp$Category == "High"], na.rm = T)
+mean(df_temp$Intense[df_temp$Category == "Low"], na.rm = T)
+```
+
 Okay, it does appear that, at least at the section level, the difference in-the-moment fear ratings is pretty substantial. 
 
 # Subsetting Relevant Data
