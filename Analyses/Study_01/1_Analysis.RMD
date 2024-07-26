@@ -920,7 +920,48 @@ plot
   dev.off()
 ```
 
-```{r}
+```{r }
+m0e <- lmer(RegSuccess  ~ 1 + (1 | PID), data = df, REML = F)
+m1e <- lmer(RegSuccess  ~ Intense.z + (1 | PID), data = df, REML = F)
+m2e <- lmer(RegSuccess  ~ Distracted_cat + (1 | PID), data = df, REML = F)
+m3e <- lmer(RegSuccess  ~ Intense.z + Distracted_cat + (1 | PID), data = df, REML = F)
+m4e <- lmer(RegSuccess  ~ Intense.z * Distracted_cat + (1 | PID), data = df, REML = F)
+```
+
+```{r Affective Intensity Model Comparisons}
+icc(m0e)
+anova(m0e, m1e)
+anova(m0e, m2e)
+anova(m1e, m3e)
+anova(m2e, m3e)
+anova(m3e, m4e)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m0e) <- "lmerMod"
+class(m1e) <- "lmerMod"
+class(m2e) <- "lmerMod"
+class(m3e) <- "lmerMod"
+class(m4e) <- "lmerMod"
+stargazer(m0e,m1e,m2e,m3e,m4e,
+          type = "text", 
+          title= "Affect Predicting Regulation Success", 
+          column.labels = c("Null Model", "Model 1", "Model 2", "Model 3", "Model 4"),
+          dep.var.labels = "Success", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          ci = T,
+          notes = "")
+```
+
+```{r Simple slopes}
+interactions::sim_slopes(model = m4e, pred = Intense.z, modx = Distracted_cat, confint = T)
+```
+```{r Testing Differences using T Test}
+t.test(x = df$RegSuccess.z[df$Distracted_cat == "Reappraised"],
+       y = df$RegSuccess.z[df$Distracted_cat == "Distracted"])
+```
+
+```{r Visualizing Regulation Success $ Intensity}
   Plot <- ggplot(data = df, aes(x = df$Intense, y = RegSuccess, color = df$Distracted_cat)) +
   stat_smooth(method = "lm",size = 4.5) +
   scale_color_discrete("Strategy") +
@@ -934,7 +975,7 @@ plot
   Plot
 ```
 
-```{r Exporting Regulation & Intensity Regression}
+```{r Exporting Regulation Success & Intensity Regression}
   tiff(paste0(Plots, "Fig4.tiff"),       
        res = 300,
        units = "in",
@@ -1070,7 +1111,7 @@ exp(-0.427)
 exp(0.516)
 ```
 
-##  Application of Reappraisal/Distract Strategies with Positive and Negative Emotions During Immediate Recall
+## Application of Reappraisal/Distract Strategies with Positive and Negative Emotions During Immediate Recall
 
 And we're going to finish off with just reappraisal and distraction in that context. 
 
