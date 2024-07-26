@@ -923,9 +923,9 @@ plot
 ```{r }
 m0e <- lmer(RegSuccess  ~ 1 + (1 | PID), data = df, REML = F)
 m1e <- lmer(RegSuccess  ~ Intense.z + (1 | PID), data = df, REML = F)
-m2e <- lmer(RegSuccess  ~ Distracted_cat + (1 | PID), data = df, REML = F)
-m3e <- lmer(RegSuccess  ~ Intense.z + Distracted_cat + (1 | PID), data = df, REML = F)
-m4e <- lmer(RegSuccess  ~ Intense.z * Distracted_cat + (1 | PID), data = df, REML = F)
+m2e <- lmer(RegSuccess  ~ Distracted + (1 | PID), data = df, REML = F)
+m3e <- lmer(RegSuccess  ~ Intense.z + Distracted + (1 | PID), data = df, REML = F)
+m4e <- lmer(RegSuccess  ~ Intense.z * Distracted + (1 | PID), data = df, REML = F)
 ```
 
 ```{r Affective Intensity Model Comparisons}
@@ -954,8 +954,15 @@ stargazer(m0e,m1e,m2e,m3e,m4e,
 ```
 
 ```{r Simple slopes}
-interactions::sim_slopes(model = m4e, pred = Intense.z, modx = Distracted_cat, confint = T)
+interactions::sim_slopes(model = m4e, pred = Intense.z, modx = Distracted, confint = T)
 ```
+
+
+```{r Simple slopes}
+sim_slopes <- interactions::sim_slopes(model = m4e, modx = Intense.z, pred = Distracted, confint = T)
+```
+
+
 ```{r Testing Differences using T Test}
 t.test(x = df$RegSuccess.z[df$Distracted_cat == "Reappraised"],
        y = df$RegSuccess.z[df$Distracted_cat == "Distracted"])
