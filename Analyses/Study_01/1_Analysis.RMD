@@ -194,6 +194,164 @@ mean(df_temp$Intense[df_temp$Category == "Low"], na.rm = T)
 
 Okay, it does appear that, at least at the section level, the difference in-the-moment fear ratings is pretty substantial. 
 
+# DETOUR DEUX: A Leave-One-Out Approach
+Another way to address Reviewer 4's concerns about standardization with greater granularity might be a leave one out approach. We average the reported intensity of all subjects who experienced the event - except the experiencer - and use that to predict behavior.
+
+We're going to reconstruct our dataset including the standardized event classifications
+```{r Reading in the data}
+# Creating a dataframe of regulation activity and events 
+df_temp <- merge(df_all,
+                 y = df_events) %>%
+           subset(!is.na(.$Distracted) & !is.na(.$StandEvent) & !is.na(.$Agreement) 
+                  & .$Reg == "Decrease" & .$Timing != "MemReg" & .$Valence <=0.5 ,
+                  select = c("PID", "StandEvent", "Intense", 
+                             "Distracted"))
+
+# Identify PID and StandEvent combinations with differing Distracted values
+differing_distracted <- df_temp %>%
+                    group_by(PID, StandEvent) %>%
+                    filter(n_distinct(Distracted) > 1) %>%
+                    select(PID, StandEvent) %>%
+                    distinct()
+
+# Remove these combinations from the original dataframe - assuming that the average reported intensity for each event across downregulated negative emotions drives behavior
+df_avg <- df_temp %>%
+          anti_join(differing_distracted, by = c("PID", "StandEvent")) %>%
+          group_by(PID, StandEvent) %>%
+          mutate(Intense = mean(Intense)) %>%
+          ungroup() %>%
+          distinct()
+
+# Creating a dataframe making a different assumption - that the maximum intensity drives behavior
+df_max <- df_temp %>%
+          anti_join(differing_distracted, by = c("PID", "StandEvent")) %>%
+          group_by(PID, StandEvent) %>%
+          filter(Intense == max(Intense)) %>%
+          ungroup() %>%
+          distinct()
+
+# Filtering any events with fewer than three unique observations
+df_avg <- df_avg %>% group_by(StandEvent) %>% filter(n() >= 3)
+df_max <- df_max %>% group_by(StandEvent) %>% filter(n() >= 3)
+
+# Generating a table to see how many events occurred in low and high intensity sections
+all(table(df_avg$StandEvent) == table(df_max$StandEvent))
+sort(table(df_avg$StandEvent))
+mean(table(df_avg$StandEvent))
+sd(table(df_avg$StandEvent))
+median(table(df_avg$StandEvent))
+range(table(df_avg$StandEvent))
+
+# Computing the Leave One Out values
+df_avg <- df_avg %>%
+  group_by(StandEvent) %>%
+  mutate(Intense.LOO = (sum(Intense) - Intense) / (n() - 1))
+
+df_max <- df_max %>%
+  group_by(StandEvent) %>%
+  mutate(Intense.LOO = (sum(Intense) - Intense) / (n() - 1))
+```
+
+```{r Computing the analysis}
+m_max <- glmer(Distracted ~ Intense.LOO + (1 | PID), data = df_max, family = binomial)
+m_avg <- glmer(Distracted ~ Intense.LOO + (1 | PID), data = df_avg, family = binomial)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m_max) <- "lmerMod"
+class(m_avg) <- "lmerMod"
+stargazer(m_max,m_avg,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Max Model", "Avg Model"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          # covariate.labels = c("Affective Intensity", "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+and calculate our effect size and confidence intervals
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(0.181)
+exp(-1.580)
+exp(1.950)
+
+exp(0.361)
+exp(-1.790)
+exp(2.520)
+```
+```{r T-test for posterity's sake}
+(t.test_max <- t.test(x = df_max$Intense.LOO[df_max$Distracted == 0],
+                     y = df_max$Intense.LOO[df_max$Distracted == 1]))
+(t.test_avg <- t.test(x = df_avg$Intense.LOO[df_avg$Distracted == 0],
+                     y = df_avg$Intense.LOO[df_avg$Distracted == 1]))
+
+```
+
+We're still just not seeing an effect but we can get slightly more conservative
+```{r Getting more conservative}
+# Filtering any events with fewer than five unique observations
+df_avg <- df_avg %>% group_by(StandEvent) %>% filter(n() >= 5)
+df_max <- df_max %>% group_by(StandEvent) %>% filter(n() >= 5)
+
+# Generating a table to see how many events occurred in low and high intensity sections
+all(table(df_avg$StandEvent) == table(df_max$StandEvent))
+sort(table(df_avg$StandEvent))
+mean(table(df_avg$StandEvent))
+sd(table(df_avg$StandEvent))
+median(table(df_avg$StandEvent))
+range(table(df_avg$StandEvent))
+
+# Computing the Leave One Out values
+df_avg <- df_avg %>%
+  group_by(StandEvent) %>%
+  mutate(Intense.LOO = (sum(Intense) - Intense) / (n() - 1))
+
+df_max <- df_max %>%
+  group_by(StandEvent) %>%
+  mutate(Intense.LOO = (sum(Intense) - Intense) / (n() - 1))
+```
+
+```{r Computing the analysis}
+m_max <- glmer(Distracted ~ Intense.LOO + (1 | PID), data = df_max, family = binomial)
+m_avg <- glmer(Distracted ~ Intense.LOO + (1 | PID), data = df_avg, family = binomial)
+```
+
+```{r Affective Intensity Model Outputs, warning=FALSE}
+class(m_max) <- "lmerMod"
+class(m_avg) <- "lmerMod"
+stargazer(m_max,m_avg,
+          type = "text", 
+          title= "Affect Predicting Regulation Usage", 
+          column.labels = c("Max Model", "Avg Model"),
+          dep.var.labels = "Strategy Usage", 
+          star.cutoffs = c(0.05, 0.01,0.001),
+          # covariate.labels = c("Affective Intensity", "Intercept"),
+          ci = T,
+          notes = "")
+```
+
+and calculate our effect size and confidence intervals
+
+```{r Calculating Effect Sizes for Affective Intensity Models}
+exp(-0.66)
+exp(-2.860)
+exp(2.730)
+
+exp(-0.090)
+exp(-3.350)
+exp(3.170)
+```
+
+```{r T test for posterity's sake}
+(t.test_max <- t.test(x = df_max$Intense.LOO[df_max$Distracted == 0],
+                     y = df_max$Intense.LOO[df_max$Distracted == 1]))
+(t.test_avg <- t.test(x = df_avg$Intense.LOO[df_avg$Distracted == 0],
+                     y = df_avg$Intense.LOO[df_avg$Distracted == 1]))
+```
+
 # Subsetting Relevant Data
 
 we're starting by focusing on those cases in which the intended regulation goal was to downregulate and excluding any cases in which we asked participants to recall emotional experiences that they previously recalled. We plan to reanalyze this data later to assess accuracy in regulatory recall. 
