@@ -26,6 +26,8 @@ NOTES:
 
   # Loading in my packages with my pacman manager
   pacman::p_load(effects,
+                 grid,
+                 gridExtra,
                  here,
                  influence.ME,
                  lattice,
@@ -1045,36 +1047,76 @@ exp(0.689)
 
 
 ```{r Visualizing Affective Models}
+set.seed(1234)
 m1.e <- effect("Intense",m1,xlevels=list(Intense=seq(range(df$Intense)[1],
                                                        range(df$Intense)[2],
                                                        0.01))) 
 m1.e <-as.data.frame(m1.e)
 head(m1.e)
-plot <- ggplot(m1.e, aes(x=Intense, y=fit)) +
-  geom_jitter(data = df, aes(x=Intense, y=Distracted, 
+plot2a_online <- ggplot(m1.e, aes(x=Intense, y=fit)) +
+  geom_jitter(data = df, alpha = 0.35, size = 3.0, aes(x=Intense, y=Distracted, 
                              color = as.factor(Distracted)), 
-              width = 0.15, height = 0.025, size = 3.5) +
-  geom_line(color = "Black", size = 4.5) +
+              width = 0.3, height = 0.04) +
+  geom_line(color = "Black", size = 3.0) +
   geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
   scale_x_continuous("Emotion Intensity") +
   scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
-  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D"), labels = c("Reappraisal", "Distraction"), name = "Strategy") +
   coord_cartesian(xlim = c(0, 4), ylim = c(0,1)) +
-  theme_classic() +  
-  theme(legend.position = "none") +
-  theme(axis.title = element_text(size = 32, color = "Black")) +
-  theme(axis.text.x = element_text(size = 36, color = "Black")) +
-  theme(axis.text.y = element_text(size = 30, color = "Black"))  
-plot
+  theme_classic() +
+  theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+        axis.text.x = element_text(size = 24, color = "Black"),
+        axis.text.y = element_text(size = 24, color = "Black"), 
+        legend.title = element_text(size = 24, face = "bold"),
+        legend.text = element_text(size = 18),
+        legend.position = c(0.200, .780))  
+plot2a_online
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
-  tiff(paste0(Plots, "Fig3.tiff"),       
-       res = 300,
+  tiff(paste0(Plots, "archive/Fig2a_online.tiff"),       
+       res = 1200,
        units = "in",
-       width = 12, 
-       height = 9)
-  plot
+       width = 6.5, 
+       height = 6.0)
+  plot2a_online
+  dev.off()
+```
+
+```{r Visualizing Affective Models}
+set.seed(1234)
+m1.e <- effect("Intense",m1,xlevels=list(Intense=seq(range(df$Intense)[1],
+                                                       range(df$Intense)[2],
+                                                       0.01))) 
+m1.e <-as.data.frame(m1.e)
+head(m1.e)
+plot2a_print <- ggplot(m1.e, aes(x=Intense, y=fit)) +
+  geom_jitter(data = df, alpha = 0.35, size = 3.0, aes(x=Intense, y=Distracted, 
+              color = as.factor(Distracted)), 
+              width = 0.3, height = 0.04) +
+  geom_line(color = "Black", size = 3.0) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), alpha = 0.15) +
+  scale_x_continuous("Emotion Intensity") +
+  scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
+  scale_color_manual(values = c("gray20", "gray60"), labels = c("Reappraisal", "Distraction"), name = "Strategy") +
+  coord_cartesian(xlim = c(0, 4), ylim = c(0,1)) +
+  theme_classic() +  
+  theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+        axis.text.x = element_text(size = 24, color = "Black"),
+        axis.text.y = element_text(size = 24, color = "Black"), 
+        legend.title = element_text(size = 24, face = "bold"),
+        legend.text = element_text(size = 18),
+        legend.position = c(0.200, .780))  
+plot2a_print
+```
+
+```{r Exporting Regulation Success & Intensity Regression}
+  tiff(paste0(Plots, "archive/Fig2a_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 6.0, 
+       height = 6.0)
+  plot2a_print
   dev.off()
 ```
 
@@ -1127,26 +1169,103 @@ t.test(x = df$RegSuccess.z[df$Distracted_cat == "Reappraised"],
 ```
 
 ```{r Visualizing Regulation Success $ Intensity}
-  Plot <- ggplot(data = df, aes(x = df$Intense, y = RegSuccess, color = df$Distracted_cat)) +
-  stat_smooth(method = "lm",size = 4.5) +
-  scale_color_discrete("Strategy") +
+  plot2b_online <- ggplot(data = df, aes(x = df$Intense, y = RegSuccess, linetype = df$Distracted_cat, color = df$Distracted_cat)) +
+  stat_smooth(method = "lm",size = 3.0) +
+  scale_color_discrete(labels = c("Distraction", "Reappraisal"), name = "Strategy") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
   labs(x = "Emotion Intensity",
-       y ="Regulation Success") +
+       y = "Regulation Success") +
   coord_cartesian(ylim=c(0, 4)) +
-  theme_classic() +  
-  theme(axis.title = element_text(size = 32, color = "Black")) +
-  theme(axis.text.x = element_text(size = 36, color = "Black")) +
-  theme(axis.text.y = element_text(size = 30, color = "Black"))  
-  Plot
+  theme_classic() +
+  theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+        axis.text.x = element_text(size = 24, color = "Black"),
+        axis.text.y = element_text(size = 24, color = "Black"),
+        legend.title = element_text(size = 24, face = "bold"),
+        legend.position = c(0.200, 0.925)) +
+        guides(color = guide_legend(reverse = TRUE),
+               linetype = guide_legend(reverse = TRUE))
+  plot2b_online
 ```
 
 ```{r Exporting Regulation Success & Intensity Regression}
-  tiff(paste0(Plots, "Fig4.tiff"),       
-       res = 300,
+  tiff(paste0(Plots, "archive/Fig2b_online.tiff"),       
+       res = 1200,
        units = "in",
-       width = 12, 
-       height = 9)
-  Plot
+       width = 6.0, 
+       height = 6.0)
+  plot2b_online
+  dev.off()
+```
+
+```{r Visualizing Regulation Success $ Intensity}
+  plot2b_print <- ggplot(data = df, aes(x = df$Intense, y = df$RegSuccess, linetype = df$Distracted_cat, color = df$Distracted_cat)) +
+          stat_smooth(method = "lm", size = 3.0) +
+          scale_color_manual(values = c("gray60", "gray20"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
+          scale_linetype_manual(values = c("solid", "dotted"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
+          labs(x = "Emotion Intensity",
+               y = "Regulation Success") +
+          coord_cartesian(ylim=c(0, 4)) +
+          theme_classic() +
+          theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+                axis.text.x = element_text(size = 24, color = "Black"),
+                axis.text.y = element_text(size = 24, color = "Black"),
+                legend.title = element_text(size = 24, face = "bold"),
+                legend.text = element_text(size = 18),
+                legend.position = c(0.200, 0.925)) +
+            guides(color = guide_legend(reverse = TRUE),
+                   linetype = guide_legend(reverse = TRUE))
+  plot2b_print
+```
+
+```{r Exporting Regulation Success & Intensity Regression}
+  tiff(paste0(Plots, "archive/Fig2b_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 6.0, 
+       height = 6.0)
+  plot2b_print
+  dev.off()
+```
+## Using gridExtra to Create a Paneled Image
+
+```{r Making the Paneled image}
+# Create text labels as grobs
+label_A <- textGrob("A", x = 0, y = 1, hjust = -2.25, vjust = 1.25, gp = gpar(fontsize = 26, fontface = "bold"))
+label_B <- textGrob("B", x = 0, y = 1, hjust = -2.25, vjust = 1.25, gp = gpar(fontsize = 26, fontface = "bold"))
+
+# Create a divider with a vertical line
+divider <- ggplot() +
+  geom_segment(aes(x = 0.5, xend = 0.5, y = 0, yend = 1), size = 1, color = "black") +
+  theme_void()
+
+# Arrange the plots with the labels on the side
+plot2_online <- grid.arrange(arrangeGrob(label_A, plot2a_online, ncol = 1, heights = c(0.1, 1)),
+                             divider,
+                             arrangeGrob(label_B, plot2b_online, ncol = 1, heights = c(0.1, 1)),
+                             ncol = 3, widths = c(1, 0.05, 1))
+
+# Exporting the images
+tiff(paste0(Plots, "Fig2_online.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 12.5, 
+       height = 6)
+  grid.draw(plot2_online)
+  dev.off()
+
+# Arrange the plots with the labels on the side
+plot2_print <- grid.arrange(arrangeGrob(label_A, plot2a_print, ncol = 1, heights = c(0.1, 1)),
+             divider,
+             arrangeGrob(label_B, plot2b_print, ncol = 1, heights = c(0.1, 1)),
+             ncol = 3, widths = c(1, 0.05, 1))
+
+# Exporting the images
+tiff(paste0(Plots, "Fig2_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 12.5, 
+       height = 6)
+  grid.draw(plot2_print)
   dev.off()
 ```
 

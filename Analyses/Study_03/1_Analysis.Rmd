@@ -18,6 +18,9 @@ if (require("pacman") == FALSE){
 
 pacman::p_load(DHARMa, 
                effects, 
+               ggpattern,
+               grid,
+               gridExtra,
                here, 
                interactions, 
                lme4, 
@@ -310,37 +313,70 @@ chisq.test(x = df$Condition[!is.na(df$Regulated) & !is.na(df$Condition)],
 RESULTS: We do find differences in how often the conditions regulate (x2(1) = 120, p < 0.001)
 
 ```{r Visualizing Regulation Chi-Square}
-  plot <- ggplot(data = subset(df, !is.na(df$Regulated) & !is.na(df$Condition)), aes(x = Condition, color = Regulated, fill = Regulated)) +
+  plot5a_online <- ggplot(data = subset(df, !is.na(df$Regulated) & !is.na(df$Condition)), aes(x = Condition, color = Regulated, fill = Regulated)) +
         geom_bar() +
-        scale_x_discrete("Condition") +
+        scale_x_discrete("Condition", labels = c("Forecast", "Experience")) +
         scale_y_continuous(breaks = c(0,150,300,450,600)) +
-        labs(
-             x = NULL,
+        labs(x = NULL,
              y ="Frequency") +
-        scale_color_brewer() +
-        scale_fill_brewer(palette = "Accent") +
+        scale_color_brewer(name = "Observations") +
+        scale_fill_brewer(palette = "Accent", name = "Observations") +
         coord_cartesian(ylim=c(0.0, 600.0)) +
         theme_classic() +
-        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-        theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
-        theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
-        theme(axis.title = element_text(size = 10)) +
-        theme(axis.text.x = element_text(size = 14, color = "Black")) +
-        theme(axis.text.y = element_text(size = 12, color = "Black")) +
-        theme(legend.key.size = unit(0.5, 'cm')) +
-        theme(legend.title = element_text(size=8)) +
-        theme(legend.text = element_text(size=6))
+        theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+              axis.text.x = element_text(size = 22, color = "Black"),
+              axis.text.y = element_text(size = 22, color = "Black"),
+              legend.title = element_text(size = 24, face = "bold"),
+              legend.text = element_text(size = 18),
+              legend.position = c(0.250, 0.925))
 
-  plot
+  plot5a_online
 ```
 
 ```{r Saving Regulation Chi-Square Plot}
-  tiff(paste0(Plots, "Fig7a.tiff"),       
-       res = 300,
+  tiff(paste0(Plots, "archive/Fig5a_online.tiff"),       
+       res = 1200,
        units = "in",
-       width = 6, 
-       height = 4.5)
-  plot
+       width = 6.0, 
+       height = 6.0)
+  plot5a_online
+  dev.off()
+```
+
+```{r Visualizing Regulation Chi-Square}
+  plot5a_print <- ggplot(data = subset(df, !is.na(df$Regulated) & !is.na(df$Condition)), 
+                          aes(x = Condition, fill = Regulated, pattern = Regulated)) +
+       geom_bar_pattern(stat = "count", 
+                        pattern_spacing = 0.05,
+                        pattern_density = 0.20,
+                        pattern_fill = 'gray15',
+                        pattern_color = 'gray15') +
+        scale_x_discrete("Condition", labels = c("Forecast", "Experience")) +
+        scale_y_continuous(breaks = c(0,150,300,450,600)) +
+        labs(x = NULL,
+             y ="Frequency") +
+        scale_fill_manual(values = c("gray55", "gray85"), name = "Observations") +
+        scale_pattern_manual(values = c("none", "stripe"), name = "Observations") +
+        coord_cartesian(ylim=c(0.0, 600.0)) +
+        theme_classic() +
+        theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+              axis.text.x = element_text(size = 22, color = "Black"),
+              axis.text.y = element_text(size = 22, color = "Black"),
+              legend.title = element_text(size = 24, face = "bold"),
+              legend.text = element_text(size = 18),
+              legend.position = c(0.250, 0.925))
+        # theme(legend.key.size = unit(0.5, 'cm')) +
+
+  plot5a_print
+```
+
+```{r Saving Regulation Chi-Square Plot}
+  tiff(paste0(Plots, "archive/Fig5a_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 6.0, 
+       height = 6.0)
+  plot5a_print
   dev.off()
 ```
 
@@ -367,37 +403,66 @@ chisq.test(x = df$Condition[df$Choice != "Neither"],
 RESULTS: The two conditions did use reappraisal and distraction at different frequencies (X2(1) = 6, p = 0.01)
 
 ```{r Visualizing Regulation Strategy Chi Square}
-  plot<- ggplot(data = subset(df, df$Choice != "Neither"), aes(x = Condition, color = Choice, fill = Choice)) +
+  plot5b_online <- ggplot(data = subset(df, df$Choice != "Neither"), aes(x = Condition, color = Choice, fill = Choice)) +
         geom_bar() +
-        scale_x_discrete("Condition") +
+        scale_x_discrete("Condition", labels = c("Forecast", "Experience")) +
         scale_y_continuous(breaks = c(0,150,300,450,600)) +
-        labs(
-
-             x = NULL,
+        labs(x = NULL,
              y ="Frequency") +
-        scale_color_brewer(palette = "Dark2", direction = -1) +
-        scale_fill_brewer(palette = "Set2", direction = -1) +
+        scale_color_brewer(palette = "Dark2", direction = -1, name = "Regulation Strategy") +
+        scale_fill_brewer(palette = "Set2", direction = -1, name = "Regulation Strategy") +
         coord_cartesian(ylim=c(0.0, 600.0)) +
         theme_classic() +
-        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-        theme(plot.subtitle = element_text(size = 10, hjust = 0.5, face = "italic")) +
-        theme(plot.caption = element_text(size = 8, hjust = 0.0, face = "italic")) +
-        theme(axis.title = element_text(size = 10)) +
-        theme(axis.text.x = element_text(size = 14, color = "Black")) +
-        theme(axis.text.y = element_text(size = 12, color = "Black")) +
-        theme(legend.key.size = unit(0.5, 'cm')) +
-        theme(legend.title = element_text(size=8)) +
-        theme(legend.text = element_text(size=6))
-plot
+        theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+              axis.text.x = element_text(size = 22, color = "Black"),
+              axis.text.y = element_text(size = 22, color = "Black"),
+              legend.title = element_text(size = 24, face = "bold"),
+              legend.text = element_text(size = 18),
+              legend.position = c(0.350, 0.925))
+ plot5b_online
 ```
 
 ```{r Saving the Regulation Strategy Visualization}
-  tiff(paste0(Plots, "Fig7b.tiff"),       
-       res = 300,
+  tiff(paste0(Plots, "archive/Fig5b_online.tiff"),       
+       res = 1200,
        units = "in",
-       width = 6, 
-       height = 4.5)
-  plot
+       width = 6.0, 
+       height = 6.0)
+  plot5b_online
+  dev.off()
+```
+
+```{r Visualizing Regulation Strategy Chi Square}
+  plot5b_print <- ggplot(data = subset(df, df$Choice != "Neither"), aes(x = Condition, fill = Choice, pattern = Choice)) +
+        geom_bar_pattern(stat = "count", 
+                        pattern_spacing = 0.05,
+                        pattern_density = 0.30,
+                        pattern_fill = 'gray90',
+                        pattern_color = 'gray90') +
+        scale_x_discrete("Condition", labels = c("Forecast", "Experience")) +
+        scale_y_continuous(breaks = c(0,150,300,450,600)) +
+        labs(x = NULL,
+             y ="Frequency") +
+        scale_fill_manual(values = c("gray60", "gray20"), name = "Regulation Strategy") +
+        scale_pattern_manual(values = c("none", "circle"), name = "Regulation Strategy") +
+        coord_cartesian(ylim=c(0.0, 600.0)) +
+        theme_classic() +
+        theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+              axis.text.x = element_text(size = 22, color = "Black"),
+              axis.text.y = element_text(size = 22, color = "Black"),
+              legend.title = element_text(size = 24, face = "bold"),
+              legend.text = element_text(size = 18),
+              legend.position = c(0.350, 0.925))
+ plot5b_print 
+```
+
+```{r Saving the Regulation Strategy Visualization}
+  tiff(paste0(Plots, "archive/Fig5b_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 6.0, 
+       height = 6.0)
+  plot5b_print
   dev.off()
 ```
 
@@ -506,7 +571,7 @@ sim_slopes(model = m5, pred = IntAfter_z, modx = Condition, confint = T)
 
 I'm not exactly sure that this is reliable for non-linear models so I'm leaving it out. 
 
-Now lastly let's generate a visualizaiton. I'm respecifying the model so that we can have the scale non-standardized at the request of the reviewers
+Now lastly let's generate a visualization. I'm respecifying the model so that we can have the scale non-standardized at the request of the reviewers
 
 ```{r Respecifying Model}
 m5 <- glmer(Distracted ~ IntAfter * Condition + IntBefore_z + ERQ_Reapp + (1 | PID) + (1 | Stimulus), 
@@ -514,32 +579,81 @@ m5 <- glmer(Distracted ~ IntAfter * Condition + IntBefore_z + ERQ_Reapp + (1 | P
           family = "binomial")
 ```
 
-```{r Setting Visualization Theme}
-set_theme(
-  base = theme_classic(), 
-  axis.title.size = 2, axis.textsize = 1.25, axis.title.color = "Black", axis.textcolor = "Black"
-)
-```
-
 ```{r Generating Primary Model Visualization}
-plot <- plot_model(m5, 
+plot5c_online <- plot_model(m5, 
                    type = "int", 
                    terms="IntAfter [all]",
                    title = "", 
-                   line.size = 2,
+                   line.size = 3,
+                   dot.size = 4, 
                    axis.title = c("Affective Intensity", 
                                   "Probability of Distraction"),
                    show.data = T, 
                    jitter = 0.025)
+plot5c_online <- plot5c_online +
+                 scale_y_continuous(labels = scales::number_format(accuracy = 0.1),
+                                    breaks = seq(0, 1, by = 0.2)) +
+                 scale_color_manual(values = c("red", "blue"),
+                                    name = "Condition",
+                                    labels = c("Forecast", "Experience")) +
+                 theme(theme_classic(),
+                       axis.title = element_text(size = 24, color = "Black", face = "bold"),
+                       axis.text.x = element_text(size = 22, color = "Black"),
+                       axis.text.y = element_text(size = 22, color = "Black"),
+                       legend.title = element_text(size = 24, face = "bold"),
+                       legend.text = element_text(size = 18),
+                       legend.position = c(0.200, 0.750))           
+
+plot5c_online
 ```
 
 ```{r Saving Primary Model Visualization}
-  tiff(paste0(Plots, "Fig8.tiff"),       
-       res = 300,
+  tiff(paste0(Plots, "archive/Fig5c_online.tiff"),       
+       res = 1200,
        units = "in",
-       width = 7, 
-       height = 4.5)
-  plot
+       width = 6.0, 
+       height = 6.0)
+  plot5c_online
+  dev.off()
+```
+
+```{r Generating Primary Model Visualization}
+plot5c_print <- plot_model(m5, 
+                   type = "int", 
+                   terms="IntAfter [all]",
+                   title = "", 
+                   line.size = 3,
+                   dot.size = 4,
+                   legend.title = "Condition",
+                   legend.labels = c("Forecast", "Experience"),
+                   axis.title = c("Affective Intensity", 
+                                  "Probability of Distraction"),
+                   show.data = T, 
+                   jitter = 0.025)
+plot5c_print <- plot5c_online +
+                 scale_y_continuous(labels = scales::number_format(accuracy = 0.1),
+                                    breaks = seq(0, 1, by = 0.2)) +
+                 scale_color_manual(values = c("gray20", "gray60"), name = "Condition", labels = c("Forecast", "Experience")) +
+                 scale_fill_manual(values = c("gray20", "gray60")) +
+                 theme(theme_classic(),
+                       axis.title = element_text(size = 24, color = "Black", face = "bold"),
+                       axis.text.x = element_text(size = 22, color = "Black"),
+                       axis.text.y = element_text(size = 22, color = "Black"),
+                       legend.title = element_text(size = 24, face = "bold"),
+                       legend.text = element_text(size = 18),
+                       legend.position = c(0.200, 0.750))           
+
+plot5c_print
+
+```
+
+```{r Saving Primary Model Visualization}
+  tiff(paste0(Plots, "archive/Fig5c_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 6.0, 
+       height = 6.0)
+  plot5c_print
   dev.off()
 ```
 
@@ -637,31 +751,142 @@ t.test(x = df$IntReduce[df$Condition == "Strategy Use" & df$Distracted == 1],
        y = df$IntReduce[df$Condition == "Strategy Forecast" & df$Distracted == 1])
 ```
 
-```{r Again Setting the Theme}
-set_theme(
-  base = theme_classic(), 
-  axis.title.size = 0.85, axis.textsize =0.951, axis.title.color = "Black", axis.textcolor = "Black"
-)
-```
-
 ```{r Generating a visualization}
-plot <- plot_model(lmer(IntReduce ~ Strategy * Condition + (1 |PID), data = df), 
+plot5d_online <- plot_model(lmer(IntReduce ~ Strategy * Condition + (1 |PID), data = df), 
                   type = "int",
                   title = "",
                   axis.title = c("Regulation Strategy", 
                                  "Reduction in Affective Intensity"), 
                   axis.lim = c(0,100),
-                  dot.size = 3, 
-                  line.size = 1,
-                  show.legend = F)
-plot
+                  line.size = 2,
+                  dot.size = 4.5,
+                  show.legend = T,
+                  show.data = F,
+                  jitter = 0.3,
+                  dodge = 0.35)
+
+
+plot5d_online <- plot5d_online +
+                 scale_color_manual(values = c("red", "blue"),
+                                    name = "Condition",
+                                    labels = c("Forecast", "Experience")) +
+                 scale_x_discrete(limits = c("Distraction", "Reappraisal")) +
+                 theme(theme_classic(),
+                       axis.title = element_text(size = 24, color = "Black", face = "bold"),
+                       axis.text.x = element_text(size = 22, color = "Black"),
+                       axis.text.y = element_text(size = 22, color = "Black"),
+                       legend.title = element_text(size = 24, face = "bold"),
+                       legend.text = element_text(size = 18),
+                       legend.position = c(0.20, 0.900)) +
+                 annotate("segment", x = 0.90, xend = 1.10, y = 68, yend = 68, color = "black", size = 1) + 
+                 annotate("text", x = 1, y = 70, label = "**", size = 16, color = "black")                  
+
+
+plot5d_online
 ```
+
 ```{r Saving the intensity reduction visualization}
-  tiff(paste0(Plots, "Fig9_NoLegend.tiff"),       
-       res = 300,
+  tiff(paste0(Plots, "archive/Fig5d_online.tiff"),       
+       res = 1200,
        units = "in",
-       width = 4, 
-       height = 4)
-  plot
+       width = 6.0, 
+       height = 6.0)
+  plot5d_online
+  dev.off()
+```
+
+
+```{r Generating a visualization}
+plot5d_print <- plot_model(lmer(IntReduce ~ Strategy * Condition + (1 |PID), data = df), 
+                  type = "int",
+                  title = "",
+                  axis.title = c("Regulation Strategy", 
+                                 "Reduction in Affective Intensity"), 
+                  axis.lim = c(0,100),
+                  line.size = 2,
+                  dot.size = 4.5,
+                  show.legend = T,
+                  show.data = F,
+                  jitter = 0.3,
+                  dodge = 0.35)
+
+
+plot5d_print <- plot5d_print +
+                 scale_color_manual(values = c("gray20", "gray60"),
+                                    name = "Condition",
+                                    labels = c("Forecast", "Experience")) +
+                 scale_x_discrete(limits = c("Distraction", "Reappraisal")) +
+                 theme(theme_classic(),
+                       axis.title = element_text(size = 24, color = "Black", face = "bold"),
+                       axis.text.x = element_text(size = 22, color = "Black"),
+                       axis.text.y = element_text(size = 22, color = "Black"),
+                       legend.title = element_text(size = 24, face = "bold"),
+                       legend.text = element_text(size = 18),
+                       legend.position = c(0.20, 0.900)) +
+                 annotate("segment", x = 0.90, xend = 1.10, y = 68, yend = 68, color = "black", size = 1) + 
+                 annotate("text", x = 1, y = 70, label = "**", size = 16, color = "black")                  
+
+
+plot5d_print
+```
+
+```{r Saving the intensity reduction visualization}
+  tiff(paste0(Plots, "archive/Fig5d_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 6.0, 
+       height = 6.0)
+  plot5d_print
+  dev.off()
+```
+
+## Using gridExtra to Create a Paneled Image
+
+```{r Making the Paneled image}
+# Create text labels as grobs
+label_A <- textGrob("A", x = 0, y = 1, hjust = -2.25, vjust = 1.25, gp = gpar(fontsize = 26, fontface = "bold"))
+label_B <- textGrob("B", x = 0, y = 1, hjust = -2.25, vjust = 1.25, gp = gpar(fontsize = 26, fontface = "bold"))
+label_C <- textGrob("C", x = 0, y = 1, hjust = -2.25, vjust = 1.25, gp = gpar(fontsize = 26, fontface = "bold"))
+label_D <- textGrob("D", x = 0, y = 1, hjust = -2.25, vjust = 1.25, gp = gpar(fontsize = 26, fontface = "bold"))
+
+# Create a divider with a vertical line
+divider <- ggplot() +
+  geom_segment(aes(x = 0.5, xend = 0.5, y = 0, yend = 1), size = 1, color = "black") +
+  theme_void()
+
+# Arrange the plots with the labels on the side
+plot5_online <- grid.arrange(arrangeGrob(label_A, plot5a_online, ncol = 1, heights = c(0.1, 1)),
+                             divider,
+                             arrangeGrob(label_B, plot5b_online, ncol = 1, heights = c(0.1, 1)),
+                             arrangeGrob(label_C, plot5c_online, ncol = 1, heights = c(0.1, 1)),
+                             divider,
+                             arrangeGrob(label_D, plot5d_online, ncol = 1, heights = c(0.1, 1)),
+                             ncol = 3, widths = c(1, 0.05, 1))
+
+# Exporting the images
+tiff(paste0(Plots, "Fig5_online.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 12.5, 
+       height = 12.5)
+  grid.draw(plot5_online)
+  dev.off()
+
+# Arrange the plots with the labels on the side
+plot5_print <- grid.arrange(arrangeGrob(label_A, plot5a_print, ncol = 1, heights = c(0.1, 1)),
+                             divider,
+                             arrangeGrob(label_B, plot5b_print, ncol = 1, heights = c(0.1, 1)),
+                             arrangeGrob(label_C, plot5c_print, ncol = 1, heights = c(0.1, 1)),
+                             divider,
+                             arrangeGrob(label_D, plot5d_print, ncol = 1, heights = c(0.1, 1)),
+                             ncol = 3, widths = c(1, 0.05, 1))
+
+# Exporting the images
+tiff(paste0(Plots, "Fig5_print.tiff"),       
+       res = 1200,
+       units = "in",
+       width = 12.5, 
+       height = 12.5)
+  grid.draw(plot5_print)
   dev.off()
 ```

@@ -487,36 +487,67 @@ Next we'll run the t-test to see if there are differences in d` values.
 We do indeed find that people are really bad a predicting distraction even adjusting for differences in the frequency with which it's used. 
 
 ```{r Assessing the distributions of emotions}
-plot <- ggplot(data = df_temp, aes(x = Strategy, y = DPrime)) + 
-       geom_jitter(aes(alpha=0.8, color=Strategy),shape=16, size = 3,  position=position_jitter(0.2)) + 
+plot4_online <- ggplot(data = df_temp, aes(x = Strategy, y = DPrime)) + 
+       geom_jitter(aes(alpha=0.35, color=Strategy), size = 3,  position=position_jitter(0.2)) + 
        geom_violin(trim=F, alpha=0.5) +
        scale_x_discrete(labels = c("Distraction", "Reappraisal")) +
-       scale_color_manual(values = c("#F8766D", "#00BFC4")) +
+       scale_color_manual(values = c("#F8766D", "#00BFC4"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
        xlab("Matching Strategy") +
        ylab("D Prime") +
-       theme(legend.position="none") +
        geom_boxplot(width=0.2, color="black", alpha=0.2) + 
-        theme_classic() +  
-        theme(legend.position = "none") +
-        theme(plot.title = element_text(face="bold", size=8, hjust = 0.5)) +
-        theme(plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic")) +
-        theme(plot.caption = element_text(size = 4, hjust = 0.00, face = "italic")) +
-        theme(axis.title = element_text(size = 32, color = "Black")) +
-        theme(axis.text.x = element_text(size = 24, color = "Black")) +
-        theme(axis.text.y = element_text(size = 30, color = "Black"))  
+       theme_classic() +  
+       theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+            axis.text.x = element_text(size = 24, color = "Black"),
+            axis.text.y = element_text(size = 24, color = "Black"), 
+            legend.position = "none")+ 
+       annotate("segment", x = 1, xend = 2, y = 0.90, yend = 0.90, color = "black", size = 1) + 
+       annotate("text", x = 1.55, y = 0.95, label = "***", size = 16, color = "black")                  
 
 
-plot
+
+plot4_online
 ```
 
 ```{r Exporting Regulation & Intensity Regression}
   setwd(Plots)
-    tiff(paste0(Plots, "Fig6.tiff"),       
-       res = 300,
-       units = "in",
-       width = 12, 
-       height = 9)
-  plot
+    tiff(paste0(Plots, "Fig4_online.tiff"),       
+         res = 1200,
+         units = "in",
+         width = 6.0, 
+         height = 6.0)
+  plot4_online
   dev.off()
-  rm(plot)
+```
+
+```{r Assessing the distributions of emotions}
+plot4_print <- ggplot(data = df_temp, aes(x = Strategy, y = DPrime)) + 
+       geom_jitter(aes(alpha=0.35, color=Strategy), size = 3,  position=position_jitter(0.2)) + 
+       geom_violin(trim=F, alpha=0.5) +
+       scale_x_discrete(labels = c("Distraction", "Reappraisal")) +
+       scale_color_manual(values = c("gray20", "gray60"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
+       xlab("Matching Strategy") +
+       ylab("D Prime") +
+       geom_boxplot(width=0.2, color="black", alpha=0.2) + 
+       theme_classic() +  
+       theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
+            axis.text.x = element_text(size = 24, color = "Black"),
+            axis.text.y = element_text(size = 24, color = "Black"), 
+            legend.position = "none") +
+annotate("segment", x = 1, xend = 2, y = 0.90, yend = 0.90, color = "black", size = 1) + 
+       annotate("text", x = 1.55, y = 0.95, label = "***", size = 16, color = "black")                
+
+
+
+plot4_print
+```
+
+```{r Exporting Regulation & Intensity Regression}
+  setwd(Plots)
+    tiff(paste0(Plots, "Fig4_print.tiff"),       
+         res = 1200,
+         units = "in",
+         width = 6.0, 
+         height = 6.0)
+  plot4_print
+  dev.off()
 ```
