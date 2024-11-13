@@ -51,7 +51,7 @@ NOTES:
   options(tinytex.verbose = TRUE)
 ```
 
-The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like \`C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to.
+The `here()` function should ideally identify our upper-level project directory. So, `WorkDir` below should be a filepath that looks something like "C:/Users/.../Documents/GitHub/fright_night_study/", or where ever you store these files. Then we'll have additional variables store filepaths within that directory for where we're reading the data from and where we're sending data to.
 
 ```{r Setting Working Directories}
   # Identifying our main directory
@@ -1062,7 +1062,7 @@ plot2a_online <- ggplot(m1.e, aes(x=Intense, y=fit)) +
   scale_x_continuous("Emotion Intensity") +
   scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
   scale_color_manual(values = c("#00BFC4", "#F8766D"), labels = c("Reappraisal", "Distraction"), name = "Strategy") +
-  coord_cartesian(xlim = c(0, 4), ylim = c(0,1)) +
+  coord_cartesian(xlim = c(-0.2, 4.2), ylim = c(0,1)) +
   theme_classic() +
   theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
         axis.text.x = element_text(size = 24, color = "Black"),
@@ -1077,7 +1077,7 @@ plot2a_online
   tiff(paste0(Plots, "archive/Fig2a_online.tiff"),       
        res = 1200,
        units = "in",
-       width = 6.5, 
+       width = 6.0, 
        height = 6.0)
   plot2a_online
   dev.off()
@@ -1099,7 +1099,7 @@ plot2a_print <- ggplot(m1.e, aes(x=Intense, y=fit)) +
   scale_x_continuous("Emotion Intensity") +
   scale_y_continuous("Probability of Using Distraction", breaks = seq(0,1,0.20)) +
   scale_color_manual(values = c("gray20", "gray60"), labels = c("Reappraisal", "Distraction"), name = "Strategy") +
-  coord_cartesian(xlim = c(0, 4), ylim = c(0,1)) +
+  coord_cartesian(xlim = c(-0.2, 4.2), ylim = c(0,1)) +
   theme_classic() +  
   theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
         axis.text.x = element_text(size = 24, color = "Black"),
@@ -1175,12 +1175,13 @@ t.test(x = df$RegSuccess.z[df$Distracted_cat == "Reappraised"],
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
   labs(x = "Emotion Intensity",
        y = "Regulation Success") +
-  coord_cartesian(ylim=c(0, 4)) +
+  coord_cartesian(ylim=c(-0.2, 4.2)) +
   theme_classic() +
   theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
         axis.text.x = element_text(size = 24, color = "Black"),
         axis.text.y = element_text(size = 24, color = "Black"),
         legend.title = element_text(size = 24, face = "bold"),
+        legend.text = element_text(size = 18),
         legend.position = c(0.200, 0.925)) +
         guides(color = guide_legend(reverse = TRUE),
                linetype = guide_legend(reverse = TRUE))
@@ -1204,7 +1205,7 @@ t.test(x = df$RegSuccess.z[df$Distracted_cat == "Reappraised"],
           scale_linetype_manual(values = c("solid", "dotted"), labels = c("Distraction", "Reappraisal"), name = "Strategy") +
           labs(x = "Emotion Intensity",
                y = "Regulation Success") +
-          coord_cartesian(ylim=c(0, 4)) +
+          coord_cartesian(ylim=c(-0.2, 4.2)) +
           theme_classic() +
           theme(axis.title = element_text(size = 24, color = "Black", face = "bold"),
                 axis.text.x = element_text(size = 24, color = "Black"),
