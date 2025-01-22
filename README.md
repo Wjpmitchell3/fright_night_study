@@ -1,6 +1,6 @@
 # The Fright Night Study
 ### Contact: billy.mitchell@temple.edu
-Data and scripts from the manuscript: Emotion regulation strategy use and forecasting in response to dynamic, multimodal stimuli
+Data and scripts from the manuscript: Emotion regulation strategy use and forecasting in response to dynamic, multimodal stimuli. The associated manuscript can be accessed [here](https://psycnet.apa.org/record/2025-69231-001).
 
 ## Structure
 All of the data and products for the project are organized into four self-explanatory directories: **1) Analyses**, **2) Data**, **3) Products**, and **4) Tasks**. 
